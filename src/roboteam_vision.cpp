@@ -14,7 +14,11 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "roboteam_vision");
     ros::NodeHandle n;
 
+    // Run at 200 hz.
+    ros::Rate loop_rate(200);
+
     ros::Publisher detection_pub = n.advertise<roboteam_vision::DetectionFrame>("vision_detection", 1000);
+    ros::Publisher geometry_pub = n.advertise<roboteam_vision::GeometryData>("vision_geometry", 1000);
 
 
     RoboCupSSLClient client;
@@ -36,12 +40,15 @@ int main(int argc, char **argv)
             }
 
             if (packet.has_geometry()) {
-
-                SSL_GeometryData geometry = packet.geometry();
+                // Convert the geometry frame.
+                roboteam_vision::GeometryData data = convert_geometry_data(packet.geometry());
+                // Publish the data.
+                geometry_pub.publish(data);
             }
         }
 
         ros::spinOnce();
+        loop_rate.sleep();
     }
 
     return 0;

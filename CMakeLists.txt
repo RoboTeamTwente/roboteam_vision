@@ -61,7 +61,7 @@ add_message_files(
   DetectionBall.msg
   DetectionRobot.msg
   DetectionFrame.msg
-  FieldCircularArc.msg
+  FieldCicularArc.msg
   FieldLineSegment.msg
   GeometryData.msg
   GeometryFieldSize.msg
