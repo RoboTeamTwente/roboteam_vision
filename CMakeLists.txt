@@ -114,7 +114,6 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS
-  include
   src/proto/cpp
 #  LIBRARIES roboteam_vision
   CATKIN_DEPENDS
