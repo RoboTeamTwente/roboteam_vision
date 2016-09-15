@@ -61,6 +61,12 @@ add_message_files(
   DetectionBall.msg
   DetectionRobot.msg
   DetectionFrame.msg
+  FieldCircularArc.msg
+  FieldLineSegment.msg
+  GeometryData.msg
+  GeometryFieldSize.msg
+  GeometryCameraCalibration.msg
+  Vector2f.msg
 )
 
 ## Generate services in the 'srv' folder
