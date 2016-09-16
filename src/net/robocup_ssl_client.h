@@ -48,6 +48,7 @@ public:
     bool open(bool blocking=false);
     void close();
     bool receive(SSL_WrapperPacket & packet);
+    bool receive(Refbox_Log & packet);
 
 };
 

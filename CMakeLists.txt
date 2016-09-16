@@ -66,6 +66,7 @@ add_message_files(
   GeometryData.msg
   GeometryFieldSize.msg
   GeometryCameraCalibration.msg
+  RefboxCmd.msg
   Vector2f.msg
 )
 
