@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "ros/ros.h"
 #include "roboteam_vision/DetectionFrame.h"
 #include "roboteam_vision/RefboxCmd.h"
@@ -9,8 +7,16 @@
 #include "proto_to_ros.h"
 
 
+// The max amount of cameras.
+const uint NUM_CAMS = 5;
+
+
 int main(int argc, char **argv)
 {
+    // Keeps track of the last frames sent by the cameras.
+    // This allows us to drop duplicate or delayed frames.
+    uint last_frames [NUM_CAMS];
+
     // Init ros.
     ros::init(argc, argv, "roboteam_vision");
     ros::NodeHandle n;
@@ -30,20 +36,32 @@ int main(int argc, char **argv)
     vision_client.open(false);
     refbox_client.open(false);
 
+    ROS_INFO("Vision ready.");
+
     SSL_WrapperPacket vision_packet;
     Refbox_Log refbox_packet;
-
-    ROS_INFO("Vision ready");
 
     while (ros::ok()) {
         while (vision_client.receive(vision_packet)) {
 
             // Detection package.
             if (vision_packet.has_detection()) {
-                // Convert the detection frame.
-                roboteam_vision::DetectionFrame frame = convert_detection_frame(vision_packet.detection());
-                // Publish the frame.
-                detection_pub.publish(frame);
+                SSL_DetectionFrame protoFrame = vision_packet.detection();
+
+                uint cam_id = protoFrame.camera_id();
+
+                if (cam_id < NUM_CAMS) {
+                    // Check if we haven't already received this frame from this camera.
+                    if (protoFrame.frame_number() > last_frames[cam_id]) {
+
+                        last_frames[cam_id] = protoFrame.frame_number();
+
+                        // Convert the detection frame.
+                        roboteam_vision::DetectionFrame frame = convert_detection_frame(protoFrame);
+                        // Publish the frame.
+                        detection_pub.publish(frame);
+                    }
+                }
             }
 
             if (vision_packet.has_geometry()) {
