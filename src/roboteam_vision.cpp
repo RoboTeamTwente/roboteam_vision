@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+#include "std_srvs/Empty.h"
 #include "roboteam_vision/DetectionFrame.h"
 #include "roboteam_vision/RefboxCmd.h"
 
@@ -10,13 +11,26 @@
 // The max amount of cameras.
 const uint NUM_CAMS = 5;
 
+// Keeps track of the last frames sent by the cameras.
+// This allows us to drop duplicate or delayed frames.
+uint last_frames [NUM_CAMS];
+
+
+/**
+ * Resets the 'last_frames' array back to 0.
+ */
+bool reset_frames(std_srvs::Empty::Request& req,
+                  std_srvs::Empty::Response& res) {
+    for (int i = 0; i < NUM_CAMS; ++i) {
+        last_frames[i] = 0;
+    }
+
+    return true;
+}
+
 
 int main(int argc, char **argv)
 {
-    // Keeps track of the last frames sent by the cameras.
-    // This allows us to drop duplicate or delayed frames.
-    uint last_frames [NUM_CAMS];
-
     // Init ros.
     ros::init(argc, argv, "roboteam_vision");
     ros::NodeHandle n;
@@ -27,6 +41,9 @@ int main(int argc, char **argv)
     ros::Publisher detection_pub = n.advertise<roboteam_vision::DetectionFrame>("vision_detection", 1000);
     ros::Publisher geometry_pub = n.advertise<roboteam_vision::GeometryData>("vision_geometry", 1000);
     ros::Publisher refbox_pub = n.advertise<roboteam_vision::RefboxCmd>("vision_refbox", 1000);
+
+    // Add the service to reset the last frame trackers.
+    ros::ServiceServer reset_service = n.advertiseService("vision_reset", reset_frames);
 
 
     RoboCupSSLClient vision_client = RoboCupSSLClient(10006, "224.5.23.2");
