@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
-#include "roboteam_vision/DetectionFrame.h"
-#include "roboteam_vision/RefboxCmd.h"
+#include "roboteam_msgs/DetectionFrame.h"
+#include "roboteam_msgs/RefboxCmd.h"
 
 #include "net/robocup_ssl_client.h"
 
@@ -32,15 +32,15 @@ bool reset_frames(std_srvs::Empty::Request& req,
 int main(int argc, char **argv)
 {
     // Init ros.
-    ros::init(argc, argv, "roboteam_vision");
+    ros::init(argc, argv, "roboteam_msgs");
     ros::NodeHandle n;
 
     // Run at 200 hz.
     ros::Rate loop_rate(200);
 
-    ros::Publisher detection_pub = n.advertise<roboteam_vision::DetectionFrame>("vision_detection", 1000);
-    ros::Publisher geometry_pub = n.advertise<roboteam_vision::GeometryData>("vision_geometry", 1000);
-    ros::Publisher refbox_pub = n.advertise<roboteam_vision::RefboxCmd>("vision_refbox", 1000);
+    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000);
+    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000);
+    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefboxCmd>("vision_refbox", 1000);
 
     // Add the service to reset the last frame trackers.
     ros::ServiceServer reset_service = n.advertiseService("vision_reset", reset_frames);
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
                         last_frames[cam_id] = protoFrame.frame_number();
 
                         // Convert the detection frame.
-                        roboteam_vision::DetectionFrame frame = convert_detection_frame(protoFrame);
+                        roboteam_msgs::DetectionFrame frame = convert_detection_frame(protoFrame);
                         // Publish the frame.
                         detection_pub.publish(frame);
                     }
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
             if (vision_packet.has_geometry()) {
                 // Convert the geometry frame.
-                roboteam_vision::GeometryData data = convert_geometry_data(vision_packet.geometry());
+                roboteam_msgs::GeometryData data = convert_geometry_data(vision_packet.geometry());
                 // Publish the data.
                 geometry_pub.publish(data);
             }
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
             // Don't forward empty referee commands.
             if (refbox_packet.log_size() > 0) {
 
-                roboteam_vision::RefboxCmd cmd;
+                roboteam_msgs::RefboxCmd cmd;
 
                 for (int i = 0; i < refbox_packet.log().size(); ++i) {
                     Log_Frame frame = refbox_packet.log().Get(i);

@@ -1,2 +1,0 @@
-GeometryFieldSize field
-GeometryCameraCalibration[] calib
