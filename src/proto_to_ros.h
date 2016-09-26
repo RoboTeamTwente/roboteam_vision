@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "net/robocup_ssl_client.h"
@@ -14,11 +15,11 @@ roboteam_msgs::DetectionBall convert_detection_ball(SSL_DetectionBall protoBall)
 
     rosBall.confidence = protoBall.confidence();
     rosBall.area = protoBall.area();
-    rosBall.x = protoBall.x();
-    rosBall.y = protoBall.y();
+    rosBall.pos.x = protoBall.x();
+    rosBall.pos.y = protoBall.y();
     rosBall.z = protoBall.z();
-    rosBall.pixel_x = protoBall.pixel_x();
-    rosBall.pixel_y = protoBall.pixel_y();
+    rosBall.pixel_pos.x = protoBall.pixel_x();
+    rosBall.pixel_pos.x = protoBall.pixel_y();
 
     return rosBall;
 }
@@ -32,11 +33,11 @@ roboteam_msgs::DetectionRobot convert_detection_robot(SSL_DetectionRobot protoBo
 
     rosBot.confidence = protoBot.confidence();
     rosBot.robot_id = protoBot.robot_id();
-    rosBot.x = protoBot.x();
-    rosBot.y = protoBot.y();
+    rosBot.pos.x = protoBot.x();
+    rosBot.pos.y = protoBot.y();
     rosBot.orientation = protoBot.orientation();
-    rosBot.pixel_x = protoBot.pixel_x();
-    rosBot.pixel_y = protoBot.pixel_y();
+    rosBot.pixel_pos.x = protoBot.pixel_x();
+    rosBot.pixel_pos.y = protoBot.pixel_y();
     rosBot.height = protoBot.height();
 
     return rosBot;
