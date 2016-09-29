@@ -156,6 +156,12 @@ add_dependencies(roboteam_vision roboteam_msgs_generate_messages_cpp)
 ## Testing ##
 #############
 
+catkin_add_gtest(vision_test 
+    test/main.cpp 
+	test/SimpleTest.cpp
+)
+target_link_libraries(vision_test ${catkin_LIBRARIES})
+
 ## Add gtest based cpp test target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_roboteam_vision.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
