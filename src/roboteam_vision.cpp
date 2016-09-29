@@ -29,6 +29,28 @@ bool reset_frames(std_srvs::Empty::Request& req,
 }
 
 
+// Sends a SSL_DetectionFrame out through the supplied publisher.
+void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher) {
+    uint cam_id = detectionFrame.camera_id();
+
+    if (cam_id < NUM_CAMS) {
+        // Check if we haven't already received this frame from this camera.
+        // TODO: See if it is necessary to remove duplicate frames.
+        // Are they even duplicate?
+        // if (protoFrame.frame_number() > last_frames[cam_id]) {
+
+            last_frames[cam_id] = detectionFrame.frame_number();
+
+            // Convert the detection frame.
+            roboteam_msgs::DetectionFrame frame = convert_detection_frame(detectionFrame);
+            // Publish the frame.
+            publisher.publish(frame);
+        //}
+    }
+}
+
+
+
 int main(int argc, char **argv)
 {
     // Init ros.
@@ -61,24 +83,9 @@ int main(int argc, char **argv)
     while (ros::ok()) {
         while (vision_client.receive(vision_packet)) {
 
-            // Detection package.
+            // Detection frame.
             if (vision_packet.has_detection()) {
-                SSL_DetectionFrame protoFrame = vision_packet.detection();
-
-                uint cam_id = protoFrame.camera_id();
-
-                if (cam_id < NUM_CAMS) {
-                    // Check if we haven't already received this frame from this camera.
-                    if (protoFrame.frame_number() > last_frames[cam_id]) {
-
-                        last_frames[cam_id] = protoFrame.frame_number();
-
-                        // Convert the detection frame.
-                        roboteam_msgs::DetectionFrame frame = convert_detection_frame(protoFrame);
-                        // Publish the frame.
-                        detection_pub.publish(frame);
-                    }
-                }
+                send_detection_frame(vision_packet.detection(), detection_pub);
             }
 
             if (vision_packet.has_geometry()) {
