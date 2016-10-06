@@ -8,6 +8,15 @@
 
 
 /**
+ * Converts the vision unit to meters.
+ * millimeters -> meters
+ */
+float vision_to_m(float scalar) {
+    return scalar / 1000;
+}
+
+
+/**
  * Converts a protoBuf DetectionBall to the ROS version.
  */
 roboteam_msgs::DetectionBall convert_detection_ball(SSL_DetectionBall protoBall) {
@@ -15,9 +24,9 @@ roboteam_msgs::DetectionBall convert_detection_ball(SSL_DetectionBall protoBall)
 
     rosBall.confidence = protoBall.confidence();
     rosBall.area = protoBall.area();
-    rosBall.pos.x = protoBall.x();
-    rosBall.pos.y = protoBall.y();
-    rosBall.z = protoBall.z();
+    rosBall.pos.x = vision_to_m(protoBall.x());
+    rosBall.pos.y = vision_to_m(protoBall.y());
+    rosBall.z = vision_to_m(protoBall.z());
     rosBall.pixel_pos.x = protoBall.pixel_x();
     rosBall.pixel_pos.x = protoBall.pixel_y();
 
@@ -33,12 +42,12 @@ roboteam_msgs::DetectionRobot convert_detection_robot(SSL_DetectionRobot protoBo
 
     rosBot.confidence = protoBot.confidence();
     rosBot.robot_id = protoBot.robot_id();
-    rosBot.pos.x = protoBot.x();
-    rosBot.pos.y = protoBot.y();
+    rosBot.pos.x = vision_to_m(protoBot.x());
+    rosBot.pos.y = vision_to_m(protoBot.y());
     rosBot.orientation = protoBot.orientation();
     rosBot.pixel_pos.x = protoBot.pixel_x();
     rosBot.pixel_pos.y = protoBot.pixel_y();
-    rosBot.height = protoBot.height();
+    rosBot.height = vision_to_m(protoBot.height());
 
     return rosBot;
 }
@@ -85,11 +94,11 @@ roboteam_msgs::FieldLineSegment convert_geometry_field_line_segment(SSL_FieldLin
     roboteam_msgs::FieldLineSegment rosLine;
 
     rosLine.name = protoLine.name();
-    rosLine.x_begin = protoLine.p1().x();
-    rosLine.y_begin = protoLine.p1().y();
-    rosLine.x_end = protoLine.p2().x();
-    rosLine.y_end = protoLine.p2().y();
-    rosLine.thickness = protoLine.thickness();
+    rosLine.x_begin = vision_to_m(protoLine.p1().x());
+    rosLine.y_begin = vision_to_m(protoLine.p1().y());
+    rosLine.x_end = vision_to_m(protoLine.p2().x());
+    rosLine.y_end = vision_to_m(protoLine.p2().y());
+    rosLine.thickness = vision_to_m(protoLine.thickness());
 
     return rosLine;
 }
@@ -102,12 +111,12 @@ roboteam_msgs::FieldCicularArc convert_geometry_field_Cicular_arc(SSL_FieldCicul
     roboteam_msgs::FieldCicularArc rosArc;
 
     rosArc.name = protoArc.name();
-    rosArc.x_center = protoArc.center().x();
-    rosArc.y_center = protoArc.center().y();
-    rosArc.radius = protoArc.radius();
+    rosArc.x_center = vision_to_m(protoArc.center().x());
+    rosArc.y_center = vision_to_m(protoArc.center().y());
+    rosArc.radius = vision_to_m(protoArc.radius());
     rosArc.a1 = protoArc.a1();
     rosArc.a2 = protoArc.a2();
-    rosArc.thickness = protoArc.thickness();
+    rosArc.thickness = vision_to_m(protoArc.thickness());
 
     return rosArc;
 }
@@ -119,11 +128,11 @@ roboteam_msgs::FieldCicularArc convert_geometry_field_Cicular_arc(SSL_FieldCicul
 roboteam_msgs::GeometryFieldSize convert_geometry_field_size(SSL_GeometryFieldSize protoSize) {
     roboteam_msgs::GeometryFieldSize rosSize;
 
-    rosSize.field_length = protoSize.field_length();
-    rosSize.field_width = protoSize.field_width();
-    rosSize.goal_width = protoSize.goal_width();
-    rosSize.goal_depth = protoSize.goal_depth();
-    rosSize.boundary_width = protoSize.boundary_width();
+    rosSize.field_length = vision_to_m(protoSize.field_length());
+    rosSize.field_width = vision_to_m(protoSize.field_width());
+    rosSize.goal_width = vision_to_m(protoSize.goal_width());
+    rosSize.goal_depth = vision_to_m(protoSize.goal_depth());
+    rosSize.boundary_width = vision_to_m(protoSize.boundary_width());
 
     for (int i = 0; i < protoSize.field_lines_size(); ++i) {
         SSL_FieldLineSegment protoLine = protoSize.field_lines().Get(i);
