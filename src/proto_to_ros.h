@@ -128,8 +128,8 @@ roboteam_msgs::FieldCicularArc convert_geometry_field_Cicular_arc(SSL_FieldCicul
 roboteam_msgs::GeometryFieldSize convert_geometry_field_size(SSL_GeometryFieldSize protoSize) {
     roboteam_msgs::GeometryFieldSize rosSize;
 
-    rosSize.field_length = vision_to_m(protoSize.field_length());
-    rosSize.field_width = vision_to_m(protoSize.field_width());
+    rosSize.field_length = 6000; //vision_to_m(protoSize.field_length());
+    rosSize.field_width = 4000; //vision_to_m(protoSize.field_width());
     rosSize.goal_width = vision_to_m(protoSize.goal_width());
     rosSize.goal_depth = vision_to_m(protoSize.goal_depth());
     rosSize.boundary_width = vision_to_m(protoSize.boundary_width());
