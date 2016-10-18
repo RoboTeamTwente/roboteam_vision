@@ -91,7 +91,10 @@ file(GLOB roboteam_vision_SRC
     "src/proto/cpp/*.cc"
 )
 
-add_executable(roboteam_vision ${roboteam_vision_SRC})
+add_executable(roboteam_vision
+    ${roboteam_vision_SRC}
+    src/proto_to_ros.cpp
+    )
 target_link_libraries(roboteam_vision ${catkin_LIBRARIES} ${PROTOBUF_LIBRARY})
 add_dependencies(roboteam_vision roboteam_msgs_generate_messages_cpp)
 
