@@ -55,7 +55,7 @@ roboteam_msgs::DetectionRobot convert_detection_robot(SSL_DetectionRobot protoBo
 /**
  * Converts a protoBuf DetectionFrame to the ROS version.
  */
-roboteam_msgs::DetectionFrame convert_detection_frame(SSL_DetectionFrame protoFrame) {
+roboteam_msgs::DetectionFrame convert_detection_frame(SSL_DetectionFrame protoFrame, bool us_is_yellow) {
     roboteam_msgs::DetectionFrame rosFrame;
 
     rosFrame.frame_number = protoFrame.frame_number();
@@ -73,13 +73,23 @@ roboteam_msgs::DetectionFrame convert_detection_frame(SSL_DetectionFrame protoFr
     for (int i = 0; i < protoFrame.robots_yellow().size(); ++i) {
         SSL_DetectionRobot protoBot = protoFrame.robots_yellow().Get(i);
         roboteam_msgs::DetectionRobot rosBot = convert_detection_robot(protoBot);
-        rosFrame.us.push_back(rosBot);
+
+        if (us_is_yellow) {
+            rosFrame.us.push_back(rosBot);
+        } else {
+            rosFrame.them.push_back(rosBot);
+        }
     }
 
     for (int i = 0; i < protoFrame.robots_blue().size(); ++i) {
         SSL_DetectionRobot protoBot = protoFrame.robots_blue().Get(i);
         roboteam_msgs::DetectionRobot rosBot = convert_detection_robot(protoBot);
-        rosFrame.them.push_back(rosBot);
+
+        if (us_is_yellow) {
+            rosFrame.them.push_back(rosBot);
+        } else {
+            rosFrame.us.push_back(rosBot);
+        }
     }
 
     return rosFrame;
@@ -175,4 +185,3 @@ roboteam_msgs::GeometryData convert_geometry_data(SSL_GeometryData protoData) {
 
     return rosData;
 }
-

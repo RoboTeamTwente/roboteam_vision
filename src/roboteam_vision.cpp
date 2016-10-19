@@ -1,3 +1,5 @@
+#include <string>
+
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
 #include "roboteam_msgs/DetectionFrame.h"
@@ -15,15 +17,64 @@ const uint NUM_CAMS = 5;
 // This allows us to drop duplicate or delayed frames.
 uint last_frames [NUM_CAMS];
 
+// Keeps track of which team is us.
+// True is yellow, false is blue.
+bool us_is_yellow;
+
+
+/**
+ * Sets the `our_color` parameter to the default "yellow".
+ * Call if the parameter hasn't been set yet, or was set to garbage.
+ */
+void default_our_color_parameter() {
+    // Default to yellow.
+    us_is_yellow = true;
+    ros::param::set("/our_color", "yellow");
+}
+
+
+/**
+ * Reads in the `our_color` parameter.
+ * If the parameter is not set, defaults to yellow.
+ */
+void read_our_color_parameter() {
+    std::string our_color;
+    if (ros::param::get("/our_color", our_color)) {
+        if (our_color == "yellow") {
+            us_is_yellow = true;
+        } else if (our_color == "blue") {
+            us_is_yellow = false;
+        } else {
+            default_our_color_parameter();
+        }
+    } else {
+        default_our_color_parameter();
+    }
+}
+
 
 /**
  * Resets the 'last_frames' array back to 0.
  */
-bool reset_frames(std_srvs::Empty::Request& req,
-                  std_srvs::Empty::Response& res) {
+void reset_frames() {
     for (int i = 0; i < NUM_CAMS; ++i) {
         last_frames[i] = 0;
     }
+}
+
+
+/**
+ * Resets the vision system.
+ * To be called on `vision_reset`.
+ *
+ * Calls `read_our_color_parameter`
+ * and calls `reset_frames`.
+ */
+bool vision_reset(std_srvs::Empty::Request& req,
+                  std_srvs::Empty::Response& res) {
+
+    read_our_color_parameter();
+    reset_frames();
 
     return true;
 }
@@ -42,7 +93,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
             last_frames[cam_id] = detectionFrame.frame_number();
 
             // Convert the detection frame.
-            roboteam_msgs::DetectionFrame frame = convert_detection_frame(detectionFrame);
+            roboteam_msgs::DetectionFrame frame = convert_detection_frame(detectionFrame, us_is_yellow);
             // Publish the frame.
             publisher.publish(frame);
         //}
@@ -65,7 +116,7 @@ int main(int argc, char **argv)
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefboxCmd>("vision_refbox", 1000);
 
     // Add the service to reset the last frame trackers.
-    ros::ServiceServer reset_service = n.advertiseService("vision_reset", reset_frames);
+    ros::ServiceServer reset_service = n.advertiseService("vision_reset", vision_reset);
 
 
     RoboCupSSLClient vision_client = RoboCupSSLClient(10006, "224.5.23.2");
@@ -74,6 +125,9 @@ int main(int argc, char **argv)
     // Open the clients, blocking = false.
     vision_client.open(false);
     refbox_client.open(false);
+
+    // Initialize which team we are.
+    read_our_color_parameter();
 
     ROS_INFO("Vision ready.");
 

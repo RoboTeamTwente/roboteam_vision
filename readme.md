@@ -17,3 +17,17 @@ To reset the frame counters, call the `/reset` service, which is an std_srvs/Emp
 ### Dependencies
 
 Protobuf
+
+
+### Services
+
+`/reset`
+Call to reset the frame counters.
+Also reads in the `our_color` parameter.
+
+### Parameters
+
+`/our_color`
+Determines which color is our team.
+Valid values are: `blue` and `yellow`.
+when not set, or set to garbage, defaults to `yellow`.
