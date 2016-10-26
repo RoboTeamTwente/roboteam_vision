@@ -83,20 +83,17 @@ include_directories(
 
 # Get all the cpp files to compile.
 file(GLOB roboteam_vision_SRC
-    "src/*.h"
     "src/*.cpp"
-    "src/net/*.h"
+    "src/convert/*.cpp"
     "src/net/*.cpp"
-    "src/proto/cpp/*.h"
     "src/proto/cpp/*.cc"
 )
 
 add_executable(roboteam_vision
     ${roboteam_vision_SRC}
-    src/proto_to_ros.cpp
     )
 target_link_libraries(roboteam_vision ${catkin_LIBRARIES} ${PROTOBUF_LIBRARY})
-add_dependencies(roboteam_vision roboteam_msgs_generate_messages_cpp)
+add_dependencies(roboteam_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ library
 # add_library(roboteam_vision
@@ -159,11 +156,12 @@ add_dependencies(roboteam_vision roboteam_msgs_generate_messages_cpp)
 ## Testing ##
 #############
 
-catkin_add_gtest(vision_test 
-    test/main.cpp 
+catkin_add_gtest(vision_test
+    test/main.cpp
 	test/SimpleTest.cpp
 )
 target_link_libraries(vision_test ${catkin_LIBRARIES})
+add_dependencies(roboteam_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Add gtest based cpp test target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_roboteam_vision.cpp)

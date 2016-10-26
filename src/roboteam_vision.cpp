@@ -3,11 +3,16 @@
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
 #include "roboteam_msgs/DetectionFrame.h"
+#include "roboteam_msgs/GeometryData.h"
 #include "roboteam_msgs/RefboxCmd.h"
 
 #include "net/robocup_ssl_client.h"
+#include "messages_robocup_ssl_wrapper.pb.h"
+#include "messages_robocup_ssl_wrapper_legacy.pb.h"
 
-#include "proto_to_ros.h"
+#include "convert/convert_detection.h"
+#include "convert/convert_geometry_current.h"
+#include "convert/convert_geometry_legacy.h"
 
 
 // The max amount of cameras.
@@ -20,6 +25,9 @@ uint last_frames [NUM_CAMS];
 // Keeps track of which team is us.
 // True is yellow, false is blue.
 bool us_is_yellow;
+
+// Wether to use the legacy SSL protobuf packets.
+bool use_legacy_packets;
 
 
 /**
@@ -54,6 +62,38 @@ void read_our_color_parameter() {
 
 
 /**
+ * Sets the `use_legacy_packets` parameter to the default `false`.
+ */
+void default_use_legacy_packets_parameter() {
+    // Default to false.
+    use_legacy_packets = false;
+    ros::param::set("/use_legacy_packets", false);
+}
+
+
+/**
+ * Reads in the `use_legacy_packets` parameter.
+ * If the parameter is not set, calls `default_use_legacy_packets_parameter`.
+ */
+void read_use_legacy_packets_parameter() {
+    bool legacy;
+    if (ros::param::get("/use_legacy_packets", legacy)) {
+        // This can probably be done more concise.
+        // I just copied this from `read_our_color_parameter`.
+        if (legacy == true) {
+            use_legacy_packets = true;
+        } else if (legacy == false) {
+            use_legacy_packets = false;
+        } else {
+            default_use_legacy_packets_parameter();
+        }
+    } else {
+        default_use_legacy_packets_parameter();
+    }
+}
+
+
+/**
  * Resets the 'last_frames' array back to 0.
  */
 void reset_frames() {
@@ -74,6 +114,7 @@ bool vision_reset(std_srvs::Empty::Request& req,
                   std_srvs::Empty::Response& res) {
 
     read_our_color_parameter();
+    read_use_legacy_packets_parameter();
     reset_frames();
 
     return true;
@@ -93,7 +134,8 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
             last_frames[cam_id] = detectionFrame.frame_number();
 
             // Convert the detection frame.
-            roboteam_msgs::DetectionFrame frame = convert_detection_frame(detectionFrame, us_is_yellow);
+            roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
+
             // Publish the frame.
             publisher.publish(frame);
         //}
@@ -128,25 +170,57 @@ int main(int argc, char **argv)
 
     // Initialize which team we are.
     read_our_color_parameter();
+    read_use_legacy_packets_parameter();
 
     ROS_INFO("Vision ready.");
 
     SSL_WrapperPacket vision_packet;
+    RoboCup2014Legacy::Wrapper::SSL_WrapperPacket vision_packet_legacy;
     Refbox_Log refbox_packet;
 
     while (ros::ok()) {
-        while (vision_client.receive(vision_packet)) {
+        if (use_legacy_packets) {
 
-            // Detection frame.
-            if (vision_packet.has_detection()) {
-                send_detection_frame(vision_packet.detection(), detection_pub);
+            // Receive legacy packets.
+            while (vision_client.receive(vision_packet_legacy)) {
+
+                ROS_INFO("Woot!");
+
+                // Detection frame.
+                if (vision_packet_legacy.has_detection()) {
+                    send_detection_frame(vision_packet_legacy.detection(), detection_pub);
+                }
+
+                if (vision_packet_legacy.has_geometry()) {
+                    ROS_INFO("Even more woot!");
+
+                    // Convert the geometry frame.
+                    roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
+
+                    // Publish the data.
+                    geometry_pub.publish(data);
+                }
             }
 
-            if (vision_packet.has_geometry()) {
-                // Convert the geometry frame.
-                roboteam_msgs::GeometryData data = convert_geometry_data(vision_packet.geometry());
-                // Publish the data.
-                geometry_pub.publish(data);
+        } else {
+
+            // Receive current version packets.
+            while (vision_client.receive(vision_packet)) {
+
+                ROS_INFO("Yup");
+
+                // Detection frame.
+                if (vision_packet.has_detection()) {
+                    send_detection_frame(vision_packet.detection(), detection_pub);
+                }
+
+                if (vision_packet.has_geometry()) {
+                    // Convert the geometry frame.
+                    roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
+
+                    // Publish the data.
+                    geometry_pub.publish(data);
+                }
             }
         }
 

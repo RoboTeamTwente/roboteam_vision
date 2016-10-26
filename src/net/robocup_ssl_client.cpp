@@ -77,6 +77,18 @@ bool RoboCupSSLClient::receive(SSL_WrapperPacket & packet) {
   return false;
 }
 
+bool RoboCupSSLClient::receive(RoboCup2014Legacy::Wrapper::SSL_WrapperPacket & packet) {
+  Net::Address src;
+  int r=0;
+  r = mc.recv(in_buffer,MaxDataGramSize,src);
+  if (r>0) {
+    fflush(stdout);
+    //decode packet:
+    return packet.ParseFromArray(in_buffer,r);
+  }
+  return false;
+}
+
 bool RoboCupSSLClient::receive(Refbox_Log & packet) {
     Net::Address src;
     int r=0;

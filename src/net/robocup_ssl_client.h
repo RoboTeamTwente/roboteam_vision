@@ -25,6 +25,7 @@
 #include "messages_robocup_ssl_detection.pb.h"
 #include "messages_robocup_ssl_geometry.pb.h"
 #include "messages_robocup_ssl_wrapper.pb.h"
+#include "messages_robocup_ssl_wrapper_legacy.pb.h"
 #include "messages_robocup_ssl_refbox_log.pb.h"
 using namespace std;
 /**
@@ -48,6 +49,7 @@ public:
     bool open(bool blocking=false);
     void close();
     bool receive(SSL_WrapperPacket & packet);
+    bool receive(RoboCup2014Legacy::Wrapper::SSL_WrapperPacket & packet);
     bool receive(Refbox_Log & packet);
 
 };

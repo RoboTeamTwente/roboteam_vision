@@ -31,3 +31,7 @@ Also reads in the `our_color` parameter.
 Determines which color is our team.
 Valid values are: `blue` and `yellow`.
 when not set, or set to garbage, defaults to `yellow`.
+
+`/use_legacy_packets`
+Switch to true when the vision system you are using sends legacy vision packets.
+Defaults to false.
