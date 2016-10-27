@@ -215,16 +215,12 @@ int main(int argc, char **argv)
             // Receive legacy packets.
             while (vision_client.receive(vision_packet_legacy)) {
 
-                ROS_INFO("Woot!");
-
                 // Detection frame.
                 if (vision_packet_legacy.has_detection()) {
                     send_detection_frame(vision_packet_legacy.detection(), detection_pub);
                 }
 
                 if (vision_packet_legacy.has_geometry()) {
-                    ROS_INFO("Even more woot!");
-
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
 
@@ -237,8 +233,6 @@ int main(int argc, char **argv)
 
             // Receive current version packets.
             while (vision_client.receive(vision_packet)) {
-
-                ROS_INFO("Yup");
 
                 // Detection frame.
                 if (vision_packet.has_detection()) {
