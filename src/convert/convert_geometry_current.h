@@ -36,7 +36,7 @@ namespace rtt {
 
 
     /**
-     * Converts a protoBuf FieldCicularArc to the ROS version.
+     * Converts a protoBuf FieldCircularArc to the ROS version.
      */
-    roboteam_msgs::FieldCicularArc convert_geometry_field_Cicular_arc(SSL_FieldCicularArc protoArc);
+    roboteam_msgs::FieldCircularArc convert_geometry_field_Circular_arc(SSL_FieldCicularArc protoArc);
 }

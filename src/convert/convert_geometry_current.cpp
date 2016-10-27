@@ -55,7 +55,7 @@ namespace rtt {
 
         for (int i = 0; i < protoSize.field_arcs_size(); ++i) {
             SSL_FieldCicularArc protoArc = protoSize.field_arcs(i);
-            roboteam_msgs::FieldCicularArc rosArc = convert_geometry_field_Cicular_arc(protoArc);
+            roboteam_msgs::FieldCircularArc rosArc = convert_geometry_field_Circular_arc(protoArc);
             rosSize.field_arcs.push_back(rosArc);
         }
 
@@ -81,10 +81,10 @@ namespace rtt {
 
 
     /**
-     * Converts a protoBuf FieldCicularArc to the ROS version.
+     * Converts a protoBuf FieldCircularArc to the ROS version.
      */
-    roboteam_msgs::FieldCicularArc convert_geometry_field_Cicular_arc(SSL_FieldCicularArc protoArc) {
-        roboteam_msgs::FieldCicularArc rosArc;
+    roboteam_msgs::FieldCircularArc convert_geometry_field_Circular_arc(SSL_FieldCicularArc protoArc) {
+        roboteam_msgs::FieldCircularArc rosArc;
 
         rosArc.name = protoArc.name();
         rosArc.x_center = mm_to_m(protoArc.center().x());

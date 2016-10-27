@@ -7,6 +7,7 @@
 
 // Needed because the geometry camera calibration is the same accross both.
 #include "convert_geometry_current.h"
+#include "convert_units.h"
 
 
 namespace rtt {
@@ -52,6 +53,8 @@ namespace legacy {
         float defense_stretch = mm_to_m(protoSize.defense_stretch());
 
         // Convert all the legacy values to the new line system.
+
+        // ---- Lines ----------------------------------------------------------
 
         // Top field border.
         rosSize.field_lines.push_back(
@@ -149,6 +152,73 @@ namespace legacy {
             )
         );
 
+        // ---- Arcs -----------------------------------------------------------
+
+        // Left top penalty arc.
+        rosSize.field_arcs.push_back(
+            make_arc(
+                "LeftFieldLeftPenaltyArc",
+                -half_length,
+                defense_stretch/2,
+                defense_radius,
+                0.0,
+                HALF_PI,
+                line_width
+            )
+        );
+
+        // Left bottom penalty arc.
+        rosSize.field_arcs.push_back(
+            make_arc(
+                "LeftFieldRightPenaltyArc",
+                -half_length,
+                -defense_stretch/2,
+                defense_radius,
+                PI + HALF_PI,
+                PI + PI,
+                line_width
+            )
+        );
+
+        // Right top penalty arc.
+        rosSize.field_arcs.push_back(
+            make_arc(
+                "RightFieldLeftPenaltyArc",
+                half_length,
+                -defense_stretch/2,
+                defense_radius,
+                PI,
+                PI + HALF_PI,
+                line_width
+            )
+        );
+
+        // Right bottom penalty arc.
+        rosSize.field_arcs.push_back(
+            make_arc(
+                "RightFieldRightPenaltyArc",
+                half_length,
+                defense_stretch/2,
+                defense_radius,
+                HALF_PI,
+                PI,
+                line_width
+            )
+        );
+
+        // The center circle.
+        rosSize.field_arcs.push_back(
+            make_arc(
+                "CenterCircle",
+                0.0,
+                0.0,
+                mm_to_m(protoSize.center_circle_radius()),
+                0.0,
+                PI + PI,
+                line_width
+            )
+        );
+
         return rosSize;
     }
 
@@ -174,6 +244,32 @@ namespace legacy {
         line.thickness = thickness;
 
         return line;
+    }
+
+
+    /**
+     * Convenience functio to create FieldArcs.
+     */
+    roboteam_msgs::FieldCircularArc make_arc(
+        std::string name,
+        float x_center,
+        float y_center,
+        float radius,
+        float a1,
+        float a2,
+        float thickness)
+    {
+        roboteam_msgs::FieldCircularArc arc = roboteam_msgs::FieldCircularArc();
+
+        arc.name = name;
+        arc.x_center = x_center;
+        arc.y_center = y_center;
+        arc.radius = radius;
+        arc.a1 = a1;
+        arc.a2 = a2;
+        arc.thickness = thickness;
+
+        return arc;
     }
 
 } // namespace legacy

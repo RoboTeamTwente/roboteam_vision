@@ -9,8 +9,6 @@
 
 #include "roboteam_msgs/GeometryData.h"
 
-#include "convert_units.h"
-
 
 namespace rtt {
 namespace legacy {
@@ -35,6 +33,18 @@ namespace legacy {
         float y_begin,
         float x_end,
         float y_end,
+        float thickness);
+
+    /**
+     * Convenience functio to create FieldArcs.
+     */
+    roboteam_msgs::FieldCircularArc make_arc(
+        std::string name,
+        float x_center,
+        float y_center,
+        float radius,
+        float a1,
+        float a2,
         float thickness);
 
 } // namespace legacy
