@@ -30,8 +30,14 @@ Also reads in the `our_color` parameter.
 `/our_color`
 Determines which color is our team.
 Valid values are: `blue` and `yellow`.
-when not set, or set to garbage, defaults to `yellow`.
+Defaults to `yellow`.
+
+`/our_field_side`
+Determines which of the field halves is ours.
+Valid values are: `left` and `right`.
+Defaults to `right`.
 
 `/use_legacy_packets`
 Switch to true when the vision system you are using sends legacy vision packets.
+Boolean.
 Defaults to false.

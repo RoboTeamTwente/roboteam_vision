@@ -62,6 +62,34 @@ void read_our_color_parameter() {
 
 
 /**
+ * Sets the `our_field_side` parameter to the default `right`.
+ */
+void default_our_field_side_parameter() {
+    ros::param::set("/our_field_side", "right");
+}
+
+
+/**
+ * Reads in the `our_field_side` parameter.
+ * If the parameter is not set, defaults to right.
+ */
+void read_our_field_side_parameter() {
+    std::string our_field_side;
+    if (ros::param::get("/our_field_side", our_field_side)) {
+        if (our_field_side == "left") {
+
+        } else if (our_field_side == "right") {
+
+        } else {
+            default_our_field_side_parameter();
+        }
+    } else {
+        default_our_field_side_parameter();
+    }
+}
+
+
+/**
  * Sets the `use_legacy_packets` parameter to the default `false`.
  */
 void default_use_legacy_packets_parameter() {
@@ -115,6 +143,8 @@ bool vision_reset(std_srvs::Empty::Request& req,
 
     read_our_color_parameter();
     read_use_legacy_packets_parameter();
+    read_our_field_side_parameter();
+
     reset_frames();
 
     return true;
@@ -168,9 +198,10 @@ int main(int argc, char **argv)
     vision_client.open(false);
     refbox_client.open(false);
 
-    // Initialize which team we are.
+    // Read the parameters.
     read_our_color_parameter();
     read_use_legacy_packets_parameter();
+    read_our_field_side_parameter();
 
     ROS_INFO("Vision ready.");
 
