@@ -26,7 +26,7 @@
 #include "messages_robocup_ssl_geometry.pb.h"
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "messages_robocup_ssl_wrapper_legacy.pb.h"
-#include "messages_robocup_ssl_refbox_log.pb.h"
+#include "messages_robocup_ssl_referee.pb.h"
 using namespace std;
 /**
 	@author Author Name
@@ -50,7 +50,7 @@ public:
     void close();
     bool receive(SSL_WrapperPacket & packet);
     bool receive(RoboCup2014Legacy::Wrapper::SSL_WrapperPacket & packet);
-    bool receive(Refbox_Log & packet);
+    bool receive(SSL_Referee & packet);
 
 };
 

@@ -89,7 +89,7 @@ bool RoboCupSSLClient::receive(RoboCup2014Legacy::Wrapper::SSL_WrapperPacket & p
   return false;
 }
 
-bool RoboCupSSLClient::receive(Refbox_Log & packet) {
+bool RoboCupSSLClient::receive(SSL_Referee & packet) {
     Net::Address src;
     int r=0;
     r = mc.recv(in_buffer,MaxDataGramSize,src);

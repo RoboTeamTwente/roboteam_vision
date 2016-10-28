@@ -4,7 +4,7 @@
 #include "std_srvs/Empty.h"
 #include "roboteam_msgs/DetectionFrame.h"
 #include "roboteam_msgs/GeometryData.h"
-#include "roboteam_msgs/RefboxCmd.h"
+#include "roboteam_msgs/RefereeData.h"
 
 #include "net/robocup_ssl_client.h"
 #include "messages_robocup_ssl_wrapper.pb.h"
@@ -13,6 +13,7 @@
 #include "convert/convert_detection.h"
 #include "convert/convert_geometry_current.h"
 #include "convert/convert_geometry_legacy.h"
+#include "convert/convert_referee.h"
 
 
 // The max amount of cameras.
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
 
     ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000);
     ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000);
-    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefboxCmd>("vision_refbox", 1000);
+    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000);
 
     // Add the service to reset the last frame trackers.
     ros::ServiceServer reset_service = n.advertiseService("vision_reset", vision_reset);
@@ -207,7 +208,7 @@ int main(int argc, char **argv)
 
     SSL_WrapperPacket vision_packet;
     RoboCup2014Legacy::Wrapper::SSL_WrapperPacket vision_packet_legacy;
-    Refbox_Log refbox_packet;
+    SSL_Referee refbox_packet;
 
     while (ros::ok()) {
         if (use_legacy_packets) {
@@ -250,21 +251,11 @@ int main(int argc, char **argv)
         }
 
         while (refbox_client.receive(refbox_packet)) {
+            // Convert the referee data.
+            roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
-            // Don't forward empty referee commands.
-            if (refbox_packet.log_size() > 0) {
-
-                roboteam_msgs::RefboxCmd cmd;
-
-                for (int i = 0; i < refbox_packet.log().size(); ++i) {
-                    Log_Frame frame = refbox_packet.log().Get(i);
-
-                    cmd.refbox_cmd.push_back(frame.refbox_cmd());
-                }
-
-                // Publish the commands.
-                refbox_pub.publish(cmd);
-            }
+            // Publish the data.
+            refbox_pub.publish(data);
         }
 
         ros::spinOnce();
