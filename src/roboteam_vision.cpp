@@ -38,7 +38,7 @@ bool use_legacy_packets;
 void default_our_color_parameter() {
     // Default to yellow.
     us_is_yellow = true;
-    ros::param::set("/our_color", "yellow");
+    ros::param::set("our_color", "yellow");
 }
 
 
@@ -48,7 +48,7 @@ void default_our_color_parameter() {
  */
 void read_our_color_parameter() {
     std::string our_color;
-    if (ros::param::get("/our_color", our_color)) {
+    if (ros::param::get("our_color", our_color)) {
         if (our_color == "yellow") {
             us_is_yellow = true;
         } else if (our_color == "blue") {
@@ -66,7 +66,7 @@ void read_our_color_parameter() {
  * Sets the `our_field_side` parameter to the default `right`.
  */
 void default_our_field_side_parameter() {
-    ros::param::set("/our_field_side", "right");
+    ros::param::set("our_field_side", "right");
 }
 
 
@@ -76,7 +76,7 @@ void default_our_field_side_parameter() {
  */
 void read_our_field_side_parameter() {
     std::string our_field_side;
-    if (ros::param::get("/our_field_side", our_field_side)) {
+    if (ros::param::get("our_field_side", our_field_side)) {
         if (our_field_side == "left") {
 
         } else if (our_field_side == "right") {
@@ -96,7 +96,7 @@ void read_our_field_side_parameter() {
 void default_use_legacy_packets_parameter() {
     // Default to false.
     use_legacy_packets = false;
-    ros::param::set("/use_legacy_packets", false);
+    ros::param::set("use_legacy_packets", false);
 }
 
 
@@ -106,7 +106,7 @@ void default_use_legacy_packets_parameter() {
  */
 void read_use_legacy_packets_parameter() {
     bool legacy;
-    if (ros::param::get("/use_legacy_packets", legacy)) {
+    if (ros::param::get("use_legacy_packets", legacy)) {
         // This can probably be done more concise.
         // I just copied this from `read_our_color_parameter`.
         if (legacy == true) {
