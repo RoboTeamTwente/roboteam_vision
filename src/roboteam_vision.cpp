@@ -187,9 +187,13 @@ int main(int argc, char **argv)
     // Run at 200 hz.
     ros::Rate loop_rate(200);
 
-    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000);
-    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000);
-    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000);
+    // Create the publishers.
+    // The `true` means that the messages will be latched.
+    // When a new node subscribes, it will automatically get the latest message of the topic,
+    // even if that was published a minute ago.
+    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000, true);
+    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
+    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
     // Add the service to reset the last frame trackers.
     ros::ServiceServer reset_service = n.advertiseService("vision_reset", vision_reset);
