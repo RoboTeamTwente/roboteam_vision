@@ -95,10 +95,7 @@ void read_our_field_side_parameter() {
  */
 void default_use_legacy_packets_parameter() {
     // Default to false.
-    ROS_INFO("===========================================");
-    ROS_INFO("= BEWARE! USING LEGACY PACKETS BY DEFAULT =");
-    ROS_INFO("===========================================");
-    use_legacy_packets = true;
+    use_legacy_packets = false;
     ros::param::set("use_legacy_packets", use_legacy_packets);
 }
 
