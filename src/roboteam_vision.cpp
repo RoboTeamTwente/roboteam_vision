@@ -7,8 +7,8 @@
 #include "roboteam_msgs/RefereeData.h"
 
 #include "net/robocup_ssl_client.h"
-#include "messages_robocup_ssl_wrapper.pb.h"
-#include "messages_robocup_ssl_wrapper_legacy.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_wrapper.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_wrapper_legacy.pb.h"
 
 #include "convert/convert_detection.h"
 #include "convert/convert_geometry_current.h"

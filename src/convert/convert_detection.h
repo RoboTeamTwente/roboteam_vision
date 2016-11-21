@@ -6,7 +6,7 @@
  */
 
 
-#include "messages_robocup_ssl_detection.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_detection.pb.h"
 
 #include "roboteam_msgs/DetectionFrame.h"
 

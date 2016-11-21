@@ -1,6 +1,6 @@
 #pragma once
 
-#include "messages_robocup_ssl_referee.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_referee.pb.h"
 
 #include "roboteam_msgs/RefereeData.h"
 

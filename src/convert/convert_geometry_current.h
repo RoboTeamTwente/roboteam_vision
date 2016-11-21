@@ -5,7 +5,7 @@
  */
 
 
-#include "messages_robocup_ssl_geometry.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_geometry.pb.h"
 
 #include "roboteam_msgs/GeometryData.h"
 
