@@ -50,13 +50,45 @@ namespace rtt {
         for (int i = 0; i < protoSize.field_lines_size(); ++i) {
             SSL_FieldLineSegment protoLine = protoSize.field_lines(i);
             roboteam_msgs::FieldLineSegment rosLine = convert_geometry_field_line_segment(protoLine);
+
             rosSize.field_lines.push_back(rosLine);
+
+            if (rosLine.name == "top_line") {
+                rosSize.top_line = rosLine;
+            } else if (rosLine.name == "bottom_line") {
+                rosSize.bottom_line = rosLine;
+            } else if (rosLine.name == "left_line") {
+                rosSize.left_line = rosLine;
+            } else if (rosLine.name == "right_line") {
+                rosSize.right_line = rosLine;
+            } else if (rosLine.name == "half_line") {
+                rosSize.half_line = rosLine;
+            } else if (rosLine.name == "center_line") {
+                rosSize.center_line = rosLine;
+            } else if (rosLine.name == "left_penalty_line") {
+                rosSize.left_penalty_line = rosLine;
+            } else if (rosLine.name == "right_penalty_line") {
+                rosSize.right_penalty_line = rosLine;
+            }
         }
 
         for (int i = 0; i < protoSize.field_arcs_size(); ++i) {
             SSL_FieldCicularArc protoArc = protoSize.field_arcs(i);
             roboteam_msgs::FieldCircularArc rosArc = convert_geometry_field_Circular_arc(protoArc);
+
             rosSize.field_arcs.push_back(rosArc);
+
+            if (rosArc.name == "top_left_penalty_arc") {
+                rosSize.top_left_penalty_arc = rosArc;
+            } else if (rosArc.name == "bottom_left_penalty_arc") {
+                rosSize.bottom_left_penalty_arc = rosArc;
+            } else if (rosArc.name == "top_right_penalty_arc") {
+                rosSize.top_right_penalty_arc = rosArc;
+            } else if (rosArc.name == "bottom_right_penalty_arc") {
+                rosSize.bottom_right_penalty_arc = rosArc;
+            } else if (rosArc.name == "center_circle") {
+                rosSize.center_circle = rosArc;
+            }
         }
 
         return rosSize;
@@ -69,11 +101,11 @@ namespace rtt {
     roboteam_msgs::FieldLineSegment convert_geometry_field_line_segment(SSL_FieldLineSegment protoLine) {
         roboteam_msgs::FieldLineSegment rosLine;
 
-        rosLine.name = protoLine.name();
-        rosLine.x_begin = mm_to_m(protoLine.p1().x());
-        rosLine.y_begin = mm_to_m(protoLine.p1().y());
-        rosLine.x_end = mm_to_m(protoLine.p2().x());
-        rosLine.y_end = mm_to_m(protoLine.p2().y());
+        rosLine.name = std::string(name_map[protoLine.name()]);
+        rosLine.begin.x = mm_to_m(protoLine.p1().x());
+        rosLine.begin.y = mm_to_m(protoLine.p1().y());
+        rosLine.end.x = mm_to_m(protoLine.p2().x());
+        rosLine.end.y = mm_to_m(protoLine.p2().y());
         rosLine.thickness = mm_to_m(protoLine.thickness());
 
         return rosLine;
@@ -86,9 +118,9 @@ namespace rtt {
     roboteam_msgs::FieldCircularArc convert_geometry_field_Circular_arc(SSL_FieldCicularArc protoArc) {
         roboteam_msgs::FieldCircularArc rosArc;
 
-        rosArc.name = protoArc.name();
-        rosArc.x_center = mm_to_m(protoArc.center().x());
-        rosArc.y_center = mm_to_m(protoArc.center().y());
+        rosArc.name = std::string(name_map[protoArc.name()]);
+        rosArc.center.x = mm_to_m(protoArc.center().x());
+        rosArc.center.y = mm_to_m(protoArc.center().y());
         rosArc.radius = mm_to_m(protoArc.radius());
         rosArc.a1 = protoArc.a1();
         rosArc.a2 = protoArc.a2();

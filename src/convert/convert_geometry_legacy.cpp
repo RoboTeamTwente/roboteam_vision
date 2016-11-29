@@ -57,167 +57,154 @@ namespace legacy {
         // ---- Lines ----------------------------------------------------------
 
         // Top field border.
-        rosSize.field_lines.push_back(
-            make_line(
-                "TopTouchLine",
-                -half_length,
-                half_width,
-                half_length,
-                half_width,
-                line_width
-            )
+        rosSize.top_line = make_line(
+            "top_line",
+            -half_length,
+            half_width,
+            half_length,
+            half_width,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.top_line);
 
         // Bottom field border.
-        rosSize.field_lines.push_back(
-            make_line(
-                "BottomTouchLine",
-                -half_length,
-                -half_width,
-                half_length,
-                -half_width,
-                line_width
-            )
+        rosSize.bottom_line = make_line(
+            "bottom_line",
+            -half_length,
+            -half_width,
+            half_length,
+            -half_width,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.bottom_line);
 
         // Left field border.
-        rosSize.field_lines.push_back(
-            make_line(
-                "LeftGoalLine",
-                -half_length,
-                -half_width,
-                -half_length,
-                half_width,
-                line_width
-            )
+        rosSize.left_line = make_line(
+            "left_line",
+            -half_length,
+            -half_width,
+            -half_length,
+            half_width,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.left_line);
 
         // Right field border.
-        rosSize.field_lines.push_back(
-            make_line(
-                "RightGoalLine",
-                half_length,
-                -half_width,
-                half_length,
-                half_width,
-                line_width
-            )
+        rosSize.right_line = make_line(
+            "right_line",
+            half_length,
+            -half_width,
+            half_length,
+            half_width,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.right_line);
 
         // Vertical halfway line.
-        rosSize.field_lines.push_back(
-            make_line(
-                "HalfwayLine",
-                0.0,
-                -half_width,
-                0.0,
-                half_width,
-                line_width
-            )
+        rosSize.half_line = make_line(
+            "half_line",
+            0.0,
+            -half_width,
+            0.0,
+            half_width,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.half_line);
 
         // Horizontal halfway line.
-        rosSize.field_lines.push_back(
-            make_line(
-                "CenterLine",
-                -half_length,
-                0.0,
-                half_length,
-                0.0,
-                line_width
-            )
+        rosSize.center_line = make_line(
+            "center_line",
+            -half_length,
+            0.0,
+            half_length,
+            0.0,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.center_line);
 
         // Left penalty line.
-        rosSize.field_lines.push_back(
-            make_line(
-                "LeftPenaltyStretch",
-                -half_length + defense_radius,
-                -defense_stretch/2,
-                -half_length + defense_radius,
-                defense_stretch/2,
-                line_width
-            )
+        rosSize.left_penalty_line = make_line(
+            "left_penalty_line",
+            -half_length + defense_radius,
+            -defense_stretch/2,
+            -half_length + defense_radius,
+            defense_stretch/2,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.left_penalty_line);
 
         // Right penalty line.
-        rosSize.field_lines.push_back(
-            make_line(
-                "RightPenaltyStretch",
-                half_length - defense_radius,
-                -defense_stretch/2,
-                half_length - defense_radius,
-                defense_stretch/2,
-                line_width
-            )
+        rosSize.right_penalty_line = make_line(
+            "right_penalty_line",
+            half_length - defense_radius,
+            -defense_stretch/2,
+            half_length - defense_radius,
+            defense_stretch/2,
+            line_width
         );
+        rosSize.field_lines.push_back(rosSize.right_penalty_line);
 
         // ---- Arcs -----------------------------------------------------------
 
         // Left top penalty arc.
-        rosSize.field_arcs.push_back(
-            make_arc(
-                "LeftFieldLeftPenaltyArc",
-                -half_length,
-                defense_stretch/2,
-                defense_radius,
-                0.0,
-                HALF_PI,
-                line_width
-            )
+        rosSize.top_left_penalty_arc = make_arc(
+            "top_left_penalty_arc",
+            -half_length,
+            defense_stretch/2,
+            defense_radius,
+            0.0,
+            HALF_PI,
+            line_width
         );
+        rosSize.field_arcs.push_back(rosSize.top_left_penalty_arc);
 
         // Left bottom penalty arc.
-        rosSize.field_arcs.push_back(
-            make_arc(
-                "LeftFieldRightPenaltyArc",
-                -half_length,
-                -defense_stretch/2,
-                defense_radius,
-                PI + HALF_PI,
-                PI + PI,
-                line_width
-            )
+        rosSize.bottom_left_penalty_arc = make_arc(
+            "bottom_left_penalty_arc",
+            -half_length,
+            -defense_stretch/2,
+            defense_radius,
+            PI + HALF_PI,
+            PI + PI,
+            line_width
         );
+        rosSize.field_arcs.push_back(rosSize.bottom_left_penalty_arc);
 
         // Right top penalty arc.
-        rosSize.field_arcs.push_back(
-            make_arc(
-                "RightFieldLeftPenaltyArc",
-                half_length,
-                -defense_stretch/2,
-                defense_radius,
-                PI,
-                PI + HALF_PI,
-                line_width
-            )
+        rosSize.top_right_penalty_arc = make_arc(
+            "top_right_penalty_arc",
+            half_length,
+            -defense_stretch/2,
+            defense_radius,
+            PI,
+            PI + HALF_PI,
+            line_width
         );
+        rosSize.field_arcs.push_back(rosSize.top_right_penalty_arc);
 
         // Right bottom penalty arc.
-        rosSize.field_arcs.push_back(
-            make_arc(
-                "RightFieldRightPenaltyArc",
-                half_length,
-                defense_stretch/2,
-                defense_radius,
-                HALF_PI,
-                PI,
-                line_width
-            )
+        rosSize.bottom_right_penalty_arc = make_arc(
+            "bottom_right_penalty_arc",
+            half_length,
+            defense_stretch/2,
+            defense_radius,
+            HALF_PI,
+            PI,
+            line_width
         );
+        rosSize.field_arcs.push_back(rosSize.bottom_right_penalty_arc);
 
         // The center circle.
-        rosSize.field_arcs.push_back(
-            make_arc(
-                "CenterCircle",
-                0.0,
-                0.0,
-                mm_to_m(protoSize.center_circle_radius()),
-                0.0,
-                PI + PI,
-                line_width
-            )
+        rosSize.center_circle = make_arc(
+            "center_circle",
+            0.0,
+            0.0,
+            mm_to_m(protoSize.center_circle_radius()),
+            0.0,
+            PI + PI,
+            line_width
         );
+        rosSize.field_arcs.push_back(rosSize.center_circle);
 
         return rosSize;
     }
@@ -237,10 +224,10 @@ namespace legacy {
         roboteam_msgs::FieldLineSegment line = roboteam_msgs::FieldLineSegment();
 
         line.name = name;
-        line.x_begin = x_begin;
-        line.y_begin = y_begin;
-        line.x_end = x_end;
-        line.y_end = y_end;
+        line.begin.x = x_begin;
+        line.begin.y = y_begin;
+        line.end.x = x_end;
+        line.end.y = y_end;
         line.thickness = thickness;
 
         return line;
@@ -248,7 +235,7 @@ namespace legacy {
 
 
     /**
-     * Convenience functio to create FieldArcs.
+     * Convenience function to create FieldArcs.
      */
     roboteam_msgs::FieldCircularArc make_arc(
         std::string name,
@@ -262,8 +249,8 @@ namespace legacy {
         roboteam_msgs::FieldCircularArc arc = roboteam_msgs::FieldCircularArc();
 
         arc.name = name;
-        arc.x_center = x_center;
-        arc.y_center = y_center;
+        arc.center.x = x_center;
+        arc.center.y = y_center;
         arc.radius = radius;
         arc.a1 = a1;
         arc.a2 = a2;

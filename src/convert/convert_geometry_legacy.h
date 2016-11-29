@@ -36,7 +36,7 @@ namespace legacy {
         float thickness);
 
     /**
-     * Convenience functio to create FieldArcs.
+     * Convenience function to create FieldArcs.
      */
     roboteam_msgs::FieldCircularArc make_arc(
         std::string name,

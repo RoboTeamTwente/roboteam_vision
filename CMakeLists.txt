@@ -4,6 +4,8 @@ project(roboteam_vision)
 # Needed for the documentation generator.
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
