@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(roboteam_vision)
 
+# Needed for the documentation generator.
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -9,65 +17,20 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   roboteam_msgs
+  roboteam_utils
 )
 
 ## System dependencies are found with CMake's conventions
 
-###############################################
-## Protobuf                                  ##
-###############################################
-include(FindProtobuf)
-find_package(Protobuf REQUIRED)
-include_directories(${Protobuf_INCLUDE_DIR})
-
-
-
-
-include_directories(include src/proto/cpp)
-
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-################################################
-## Declare ROS dynamic reconfigure parameters ##
-################################################
-
-## To declare and build dynamic reconfigure parameters within this
-## package, follow these steps:
-## * In the file package.xml:
-##   * add a build_depend and a run_depend tag for "dynamic_reconfigure"
-## * In this file (CMakeLists.txt):
-##   * add "dynamic_reconfigure" to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * uncomment the "generate_dynamic_reconfigure_options" section below
-##     and list every .cfg file to be processed
-
-## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
-
 ###################################
 ## catkin specific configuration ##
 ###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
+
 catkin_package(
   INCLUDE_DIRS
-  src/proto/cpp
 #  LIBRARIES roboteam_vision
   CATKIN_DEPENDS
   message_runtime
-  DEPENDS
-  Protobuf
 )
 
 ###########
@@ -83,84 +46,26 @@ include_directories(
 
 # Get all the cpp files to compile.
 file(GLOB roboteam_vision_SRC
-    "src/*.h"
     "src/*.cpp"
-    "src/net/*.h"
+    "src/convert/*.cpp"
     "src/net/*.cpp"
-    "src/proto/cpp/*.h"
     "src/proto/cpp/*.cc"
 )
 
-add_executable(roboteam_vision ${roboteam_vision_SRC})
-target_link_libraries(roboteam_vision ${catkin_LIBRARIES} ${PROTOBUF_LIBRARY})
-add_dependencies(roboteam_vision roboteam_msgs_generate_messages_cpp)
+add_executable(roboteam_vision
+    ${roboteam_vision_SRC}
+    )
+target_link_libraries(roboteam_vision ${catkin_LIBRARIES})
+add_dependencies(roboteam_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-## Declare a C++ library
-# add_library(roboteam_vision
-#   src/${PROJECT_NAME}/roboteam_vision.cpp
-# )
-
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(roboteam_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Declare a C++ executable
-# add_executable(roboteam_vision_node src/roboteam_vision_node.cpp)
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(roboteam_vision_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-# target_link_libraries(roboteam_vision_node
-#   ${catkin_LIBRARIES}
-# )
-
-#############
-## Install ##
-#############
-
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark executables and/or libraries for installation
-# install(TARGETS roboteam_vision roboteam_vision_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
 
 #############
 ## Testing ##
 #############
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_roboteam_vision.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+catkin_add_gtest(vision_test
+    test/main.cpp
+	test/SimpleTest.cpp
+)
+target_link_libraries(vision_test ${catkin_LIBRARIES})
+add_dependencies(roboteam_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

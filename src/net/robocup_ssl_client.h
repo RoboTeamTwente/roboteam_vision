@@ -22,10 +22,11 @@
 #define ROBOCUP_SSL_CLIENT_H
 #include "netraw.h"
 #include <string>
-#include "messages_robocup_ssl_detection.pb.h"
-#include "messages_robocup_ssl_geometry.pb.h"
-#include "messages_robocup_ssl_wrapper.pb.h"
-#include "messages_robocup_ssl_refbox_log.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_detection.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_geometry.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_wrapper.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_wrapper_legacy.pb.h"
+#include "roboteam_utils/messages_robocup_ssl_referee.pb.h"
 using namespace std;
 /**
 	@author Author Name
@@ -48,7 +49,8 @@ public:
     bool open(bool blocking=false);
     void close();
     bool receive(SSL_WrapperPacket & packet);
-    bool receive(Refbox_Log & packet);
+    bool receive(RoboCup2014Legacy::Wrapper::SSL_WrapperPacket & packet);
+    bool receive(SSL_Referee & packet);
 
 };
 
