@@ -63,29 +63,29 @@ void read_our_color_parameter() {
 
 
 /**
- * Sets the `our_field_side` parameter to the default `right`.
+ * Sets the `our_side` parameter to the default `right`.
  */
-void default_our_field_side_parameter() {
-    ros::param::set("our_field_side", "right");
+void default_our_side_parameter() {
+    ros::param::set("our_side", "right");
 }
 
 
 /**
- * Reads in the `our_field_side` parameter.
+ * Reads in the `our_side` parameter.
  * If the parameter is not set, defaults to right.
  */
-void read_our_field_side_parameter() {
-    std::string our_field_side;
-    if (ros::param::get("our_field_side", our_field_side)) {
-        if (our_field_side == "left") {
+void read_our_side_parameter() {
+    std::string our_side;
+    if (ros::param::get("our_side", our_side)) {
+        if (our_side == "left") {
 
-        } else if (our_field_side == "right") {
+        } else if (our_side == "right") {
 
         } else {
-            default_our_field_side_parameter();
+            default_our_side_parameter();
         }
     } else {
-        default_our_field_side_parameter();
+        default_our_side_parameter();
     }
 }
 
@@ -144,7 +144,7 @@ bool vision_reset(std_srvs::Empty::Request& req,
 
     read_our_color_parameter();
     read_use_legacy_packets_parameter();
-    read_our_field_side_parameter();
+    read_our_side_parameter();
 
     reset_frames();
 
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
     // Read the parameters.
     read_our_color_parameter();
     read_use_legacy_packets_parameter();
-    read_our_field_side_parameter();
+    read_our_side_parameter();
 
     ROS_INFO("Vision ready.");
 

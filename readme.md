@@ -32,7 +32,7 @@ Determines which color is our team.
 Valid values are: `blue` and `yellow`.
 Defaults to `yellow`.
 
-`/our_field_side`
+`/our_side`
 Determines which of the field halves is ours.
 Valid values are: `left` and `right`.
 Defaults to `right`.
