@@ -153,7 +153,7 @@ namespace legacy {
             defense_stretch/2,
             defense_radius,
             0.0,
-            HALF_PI,
+            M_PI_2,
             line_width
         );
         rosSize.field_arcs.push_back(rosSize.top_left_penalty_arc);
@@ -164,8 +164,8 @@ namespace legacy {
             -half_length,
             -defense_stretch/2,
             defense_radius,
-            PI + HALF_PI,
-            PI + PI,
+            M_PI + M_PI_2,
+            M_PI + M_PI,
             line_width
         );
         rosSize.field_arcs.push_back(rosSize.bottom_left_penalty_arc);
@@ -176,8 +176,8 @@ namespace legacy {
             half_length,
             -defense_stretch/2,
             defense_radius,
-            PI,
-            PI + HALF_PI,
+            M_PI,
+            M_PI + M_PI_2,
             line_width
         );
         rosSize.field_arcs.push_back(rosSize.top_right_penalty_arc);
@@ -188,8 +188,8 @@ namespace legacy {
             half_length,
             defense_stretch/2,
             defense_radius,
-            HALF_PI,
-            PI,
+            M_PI_2,
+            M_PI,
             line_width
         );
         rosSize.field_arcs.push_back(rosSize.bottom_right_penalty_arc);
@@ -201,7 +201,7 @@ namespace legacy {
             0.0,
             mm_to_m(protoSize.center_circle_radius()),
             0.0,
-            PI + PI,
+            M_PI + M_PI,
             line_width
         );
         rosSize.field_arcs.push_back(rosSize.center_circle);
