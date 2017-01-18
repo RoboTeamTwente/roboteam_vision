@@ -3,7 +3,7 @@
  * Works for legacy and current SSL vision formats.
  */
 
-#include "convert_detection.h"
+#include "roboteam_vision/convert/convert_detection.h"
 
 
 namespace rtt {

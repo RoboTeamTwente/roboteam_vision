@@ -10,10 +10,10 @@
 #include "roboteam_utils/messages_robocup_ssl_wrapper.pb.h"
 #include "roboteam_utils/messages_robocup_ssl_wrapper_legacy.pb.h"
 
-#include "convert/convert_detection.h"
-#include "convert/convert_geometry_current.h"
-#include "convert/convert_geometry_legacy.h"
-#include "convert/convert_referee.h"
+#include "roboteam_vision/convert/convert_detection.h"
+#include "roboteam_vision/convert/convert_geometry_current.h"
+#include "roboteam_vision/convert/convert_geometry_legacy.h"
+#include "roboteam_vision/convert/convert_referee.h"
 
 
 // The max amount of cameras.

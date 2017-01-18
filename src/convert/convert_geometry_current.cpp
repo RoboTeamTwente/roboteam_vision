@@ -2,7 +2,7 @@
  * Functions to convert the current SSL geometry packets to the ROS format.
  */
 
-#include "convert_geometry_current.h"
+#include "roboteam_vision/convert/convert_geometry_current.h"
 
 
 namespace rtt {

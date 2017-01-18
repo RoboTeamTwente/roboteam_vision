@@ -3,11 +3,11 @@
  */
 
 
-#include "convert_geometry_legacy.h"
+#include "roboteam_vision/convert/convert_geometry_legacy.h"
 
 // Needed because the geometry camera calibration is the same accross both.
-#include "convert_geometry_current.h"
-#include "convert_units.h"
+#include "roboteam_vision/convert/convert_geometry_current.h"
+#include "roboteam_vision/convert/convert_units.h"
 
 
 namespace rtt {

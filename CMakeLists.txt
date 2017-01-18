@@ -27,10 +27,12 @@ find_package(catkin REQUIRED COMPONENTS
 ###################################
 
 catkin_package(
-  INCLUDE_DIRS
-#  LIBRARIES roboteam_vision
-  CATKIN_DEPENDS
-  message_runtime
+    INCLUDE_DIRS
+        include
+    LIBRARIES
+        roboteam_vision_convert
+    CATKIN_DEPENDS
+        message_runtime
 )
 
 ###########
@@ -42,21 +44,37 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  include
 )
 
-# Get all the cpp files to compile.
-file(GLOB roboteam_vision_SRC
-    "src/*.cpp"
-    "src/convert/*.cpp"
-    "src/net/*.cpp"
-    "src/proto/cpp/*.cc"
-)
+add_library(roboteam_vision_convert
+    src/convert/convert_detection.cpp
+    src/convert/convert_geometry_current.cpp
+    src/convert/convert_geometry_legacy.cpp
+    src/convert/convert_referee.cpp
+    src/convert/convert_units.cpp
+    )
+add_dependencies(roboteam_vision_convert ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(roboteam_vision
-    ${roboteam_vision_SRC}
+    # Main executable program
+    src/roboteam_vision.cpp
+
+    # Net code from ssl vision
+    src/net/netraw.cpp
+    src/net/netraw.h
+    src/net/robocup_ssl_client.cpp
+    src/net/robocup_ssl_client.h
+    src/net/util.h
     )
-target_link_libraries(roboteam_vision ${catkin_LIBRARIES})
-add_dependencies(roboteam_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(roboteam_vision
+    roboteam_vision_convert
+    ${catkin_LIBRARIES}
+    )
+add_dependencies(roboteam_vision
+    ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+    ${catkin_EXPORTED_TARGETS}
+    )
 
 
 #############
