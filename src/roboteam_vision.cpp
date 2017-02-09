@@ -10,6 +10,9 @@
 #include "roboteam_utils/messages_robocup_ssl_wrapper.pb.h"
 #include "roboteam_utils/messages_robocup_ssl_wrapper_legacy.pb.h"
 
+#include "roboteam_utils/normalize.h"
+#include "roboteam_utils/constants.h"
+
 #include "roboteam_vision/convert/convert_detection.h"
 #include "roboteam_vision/convert/convert_geometry_current.h"
 #include "roboteam_vision/convert/convert_geometry_legacy.h"
@@ -166,6 +169,15 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
 
             // Convert the detection frame.
             roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
+
+            // Do we need to normalize the frame?
+            bool should_normalize = false;
+            rtt::get_PARAM_NORMALIZE_FIELD(should_normalize);
+
+            if (should_normalize) {
+                ROS_INFO("NORMALIZING!");
+                frame = rtt::normalizeDetectionFrame(frame);
+            }
 
             // Publish the frame.
             publisher.publish(frame);
