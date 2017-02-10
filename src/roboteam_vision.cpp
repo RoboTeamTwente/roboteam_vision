@@ -156,7 +156,7 @@ bool vision_reset(std_srvs::Empty::Request& req,
 
 
 // Sends a SSL_DetectionFrame out through the supplied publisher.
-void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher) {
+void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool should_normalize) {
     uint cam_id = detectionFrame.camera_id();
 
     if (cam_id < NUM_CAMS) {
@@ -170,12 +170,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
             // Convert the detection frame.
             roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
-            // Do we need to normalize the frame?
-            bool should_normalize = false;
-            rtt::get_PARAM_NORMALIZE_FIELD(should_normalize);
-
             if (should_normalize) {
-                ROS_INFO("NORMALIZING!");
                 frame = rtt::normalizeDetectionFrame(frame);
             }
 
@@ -215,11 +210,6 @@ int main(int argc, char **argv)
     vision_client.open(false);
     refbox_client.open(false);
 
-    // Read the parameters.
-    read_our_color_parameter();
-    read_use_legacy_packets_parameter();
-    read_our_side_parameter();
-
     ROS_INFO("Vision ready.");
 
     SSL_WrapperPacket vision_packet;
@@ -227,6 +217,15 @@ int main(int argc, char **argv)
     SSL_Referee refbox_packet;
 
     while (ros::ok()) {
+        // Read the parameters.
+        read_our_color_parameter();
+        read_use_legacy_packets_parameter();
+        read_our_side_parameter();
+
+        // Do we need to normalize the frame?
+        bool should_normalize = false;
+        rtt::get_PARAM_NORMALIZE_FIELD(should_normalize);
+
         if (use_legacy_packets) {
 
             // Receive legacy packets.
@@ -234,12 +233,16 @@ int main(int argc, char **argv)
 
                 // Detection frame.
                 if (vision_packet_legacy.has_detection()) {
-                    send_detection_frame(vision_packet_legacy.detection(), detection_pub);
+                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, should_normalize);
                 }
 
                 if (vision_packet_legacy.has_geometry()) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
+
+                    if (should_normalize) {
+                        data = rtt::normalizeGeometryData(data);
+                    }
 
                     // Publish the data.
                     geometry_pub.publish(data);
@@ -253,12 +256,16 @@ int main(int argc, char **argv)
 
                 // Detection frame.
                 if (vision_packet.has_detection()) {
-                    send_detection_frame(vision_packet.detection(), detection_pub);
+                    send_detection_frame(vision_packet.detection(), detection_pub, should_normalize);
                 }
 
                 if (vision_packet.has_geometry()) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
+
+                    if (should_normalize) {
+                        data = rtt::normalizeGeometryData(data);
+                    }
 
                     // Publish the data.
                     geometry_pub.publish(data);
@@ -269,6 +276,11 @@ int main(int argc, char **argv)
         while (refbox_client.receive(refbox_packet)) {
             // Convert the referee data.
             roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
+
+            if (should_normalize) {
+                data = rtt::normalizeRefereeData(data);
+            }
+
 
             // Publish the data.
             refbox_pub.publish(data);
