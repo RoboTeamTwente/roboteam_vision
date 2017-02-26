@@ -159,6 +159,7 @@ bool vision_reset(std_srvs::Empty::Request& req,
 void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool should_normalize) {
     uint cam_id = detectionFrame.camera_id();
 
+
     if (cam_id < NUM_CAMS) {
         // Check if we haven't already received this frame from this camera.
         // TODO: See if it is necessary to remove duplicate frames.
@@ -185,7 +186,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
 int main(int argc, char **argv)
 {
     // Init ros.
-    ros::init(argc, argv, "roboteam_msgs");
+    ros::init(argc, argv, "roboteam_msgs"); // What?
     ros::NodeHandle n;
 
     // Run at 200 hz.
