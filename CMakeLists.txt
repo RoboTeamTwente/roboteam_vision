@@ -76,6 +76,16 @@ add_dependencies(roboteam_vision
     ${catkin_EXPORTED_TARGETS}
     )
 
+add_executable(crashtest
+    src/crashtest.cpp
+    )
+target_link_libraries(crashtest
+    ${catkin_LIBRARIES}
+    )
+add_dependencies(roboteam_vision
+    ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+    ${catkin_EXPORTED_TARGETS}
+    )
 
 #############
 ## Testing ##

@@ -1,4 +1,5 @@
 #include <string>
+#include <signal.h>
 
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
@@ -181,12 +182,22 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
     }
 }
 
+namespace {
 
+bool shuttingDown = false;
+
+void sigIntHandler(int) {
+    shuttingDown = true;
+}
+
+} // anonymous namespace
 
 int main(int argc, char **argv)
 {
     // Init ros.
-    ros::init(argc, argv, "roboteam_msgs"); // What?
+    ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // What?
+    // Flower power!
+    signal(SIGINT, sigIntHandler); 
     ros::NodeHandle n;
 
     // Run at 200 hz.
@@ -217,7 +228,7 @@ int main(int argc, char **argv)
     RoboCup2014Legacy::Wrapper::SSL_WrapperPacket vision_packet_legacy;
     SSL_Referee refbox_packet;
 
-    while (ros::ok()) {
+    while (ros::ok() && !shuttingDown) {
         // Read the parameters.
         read_our_color_parameter();
         read_use_legacy_packets_parameter();
@@ -290,6 +301,14 @@ int main(int argc, char **argv)
         ros::spinOnce();
         loop_rate.sleep();
     }
+
+    // Destructors do not call close properly. Just to be sure we do.
+    vision_client.close();
+    refbox_client.close();
+
+    // This is needed because we use our own SIGINT handler!
+    // See crashtest.cpp for details
+    ros::shutdown();
 
     return 0;
 }
