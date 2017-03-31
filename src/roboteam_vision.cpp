@@ -155,11 +155,94 @@ bool vision_reset(std_srvs::Empty::Request& req,
     return true;
 }
 
+namespace {
+
+bool shuttingDown = false;
+
+void sigIntHandler(int) {
+    shuttingDown = true;
+}
+
+bool hasArg(std::vector<std::string> const & args, std::string const & arg) {
+    return std::find(args.begin(), args.end(), arg) != args.end();
+}
+
+bool MERGING = false;
+
+void swapBots3to6(roboteam_msgs::DetectionFrame & frame) {
+    // @Hack
+    
+    auto isRobotPresent = [](std::vector<roboteam_msgs::DetectionRobot> const bots, unsigned int id) {
+        for (auto const & bot : bots) {
+            if (bot.robot_id == id) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    auto lookupBotIfPresent = [](std::vector<roboteam_msgs::DetectionRobot> const bots, unsigned int id) {
+        for (auto const & bot : bots) {
+            if (bot.robot_id == id) {
+                return bot;
+            }
+        }
+
+        return bots[0];
+    };
+
+    auto putBotIfPresent = [](std::vector<roboteam_msgs::DetectionRobot> & bots, roboteam_msgs::DetectionRobot const & bot, unsigned int id) {
+        for (auto & otherBot : bots) {
+            if (otherBot.robot_id == id) {
+                otherBot = bot;
+                otherBot.robot_id = id;
+                return;
+            }
+        }
+    };
+
+    std::string our_color = "yellow";
+    ros::param::get("our_color", our_color);
+
+    std::vector<roboteam_msgs::DetectionRobot> blue;
+    std::vector<roboteam_msgs::DetectionRobot> yellow;
+
+    if (our_color == "yellow") {
+        yellow = frame.us;
+        blue = frame.them;
+    } else {
+        blue = frame.us;
+        yellow = frame.them;
+    }
+
+    for (unsigned int i = 0; i < 3; ++i) {
+        bool yellowPresent = isRobotPresent(yellow, i + 3);
+        bool bluePresent = isRobotPresent(blue, i);
+
+        if (yellowPresent && bluePresent) {
+            auto robotYellow = lookupBotIfPresent(yellow, i + 3);
+            auto robotBlue = lookupBotIfPresent(blue, i);
+
+            putBotIfPresent(yellow, robotBlue, i + 3);
+            putBotIfPresent(blue, robotYellow, i);
+        }
+    }
+
+    if (our_color == "yellow") {
+        frame.us = yellow;
+        frame.them = blue;
+    } else {
+        frame.us = blue;
+        frame.them = yellow;
+    }
+}
+
+} // anonymous namespace
 
 // Sends a SSL_DetectionFrame out through the supplied publisher.
 void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool should_normalize) {
     uint cam_id = detectionFrame.camera_id();
-
 
     if (cam_id < NUM_CAMS) {
         // Check if we haven't already received this frame from this camera.
@@ -176,24 +259,27 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
                 frame = rtt::normalizeDetectionFrame(frame);
             }
 
+            if (MERGING) {
+                // Swap around robots 3-5 between yellow and blue
+                swapBots3to6(frame);
+            }
+
             // Publish the frame.
             publisher.publish(frame);
         //}
     }
 }
 
-namespace {
+int main(int argc, char **argv) {
 
-bool shuttingDown = false;
+    std::vector<std::string> args(argv, argv + argc);
 
-void sigIntHandler(int) {
-    shuttingDown = true;
-}
+    MERGING = hasArg(args, "--merge-mode");
 
-} // anonymous namespace
+    if (MERGING) {
+        std::cout << "[Vision] Merge mode active\n";
+    }
 
-int main(int argc, char **argv)
-{
     // Init ros.
     ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // What?
     // Flower power!
@@ -235,8 +321,13 @@ int main(int argc, char **argv)
         read_our_side_parameter();
 
         // Do we need to normalize the frame?
-        bool should_normalize = false;
-        rtt::get_PARAM_NORMALIZE_FIELD(should_normalize);
+        bool normalize_field = false;
+        rtt::get_PARAM_NORMALIZE_FIELD(normalize_field);
+
+        std::string our_side = "left";
+        rtt::get_PARAM_OUR_SIDE(our_side);
+
+        bool should_normalize = our_side == "right" && normalize_field;
 
         if (use_legacy_packets) {
 
