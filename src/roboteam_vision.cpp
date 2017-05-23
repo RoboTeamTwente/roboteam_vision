@@ -20,13 +20,6 @@
 #include "roboteam_vision/convert/convert_referee.h"
 
 
-// The max amount of cameras.
-const uint NUM_CAMS = 5;
-
-// Keeps track of the last frames sent by the cameras.
-// This allows us to drop duplicate or delayed frames.
-uint last_frames [NUM_CAMS];
-
 // Keeps track of which team is us.
 // True is yellow, false is blue.
 bool us_is_yellow;
@@ -126,22 +119,12 @@ void read_use_legacy_packets_parameter() {
 }
 
 
-/**
- * Resets the 'last_frames' array back to 0.
- */
-void reset_frames() {
-    for (int i = 0; i < NUM_CAMS; ++i) {
-        last_frames[i] = 0;
-    }
-}
-
 
 /**
  * Resets the vision system.
  * To be called on `vision_reset`.
  *
- * Calls `read_our_color_parameter`
- * and calls `reset_frames`.
+ * Calls `read_our_color_parameter`.
  */
 bool vision_reset(std_srvs::Empty::Request& req,
                   std_srvs::Empty::Response& res) {
@@ -149,8 +132,6 @@ bool vision_reset(std_srvs::Empty::Request& req,
     read_our_color_parameter();
     read_use_legacy_packets_parameter();
     read_our_side_parameter();
-
-    reset_frames();
 
     return true;
 }
@@ -171,7 +152,7 @@ bool MERGING = false;
 
 void swapBots3to6(roboteam_msgs::DetectionFrame & frame) {
     // @Hack
-    
+
     auto isRobotPresent = [](std::vector<roboteam_msgs::DetectionRobot> const bots, unsigned int id) {
         for (auto const & bot : bots) {
             if (bot.robot_id == id) {
@@ -244,30 +225,24 @@ void swapBots3to6(roboteam_msgs::DetectionFrame & frame) {
 void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool should_normalize) {
     uint cam_id = detectionFrame.camera_id();
 
-    if (cam_id < NUM_CAMS) {
-        // Check if we haven't already received this frame from this camera.
-        // TODO: See if it is necessary to remove duplicate frames.
-        // Are they even duplicate?
-        // if (protoFrame.frame_number() > last_frames[cam_id]) {
+    // Check if we haven't already received this frame from this camera.
+    // TODO: See if it is necessary to remove duplicate frames.
+    // Are they even duplicate?
 
-            last_frames[cam_id] = detectionFrame.frame_number();
+    // Convert the detection frame.
+    roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
-            // Convert the detection frame.
-            roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
-
-            if (should_normalize) {
-                frame = rtt::normalizeDetectionFrame(frame);
-            }
-
-            if (MERGING) {
-                // Swap around robots 3-5 between yellow and blue
-                swapBots3to6(frame);
-            }
-
-            // Publish the frame.
-            publisher.publish(frame);
-        //}
+    if (should_normalize) {
+        frame = rtt::normalizeDetectionFrame(frame);
     }
+
+    if (MERGING) {
+        // Swap around robots 3-5 between yellow and blue
+        swapBots3to6(frame);
+    }
+
+    // Publish the frame.
+    publisher.publish(frame);
 }
 
 int main(int argc, char **argv) {
@@ -283,7 +258,7 @@ int main(int argc, char **argv) {
     // Init ros.
     ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // What?
     // Flower power!
-    signal(SIGINT, sigIntHandler); 
+    signal(SIGINT, sigIntHandler);
     ros::NodeHandle n;
 
     // Run at 200 hz.
