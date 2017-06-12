@@ -76,11 +76,35 @@ void update_parameters_from_ros() {
     }
 
     if (ros::param::has("use_legacy_packets")) {
-        bool legacy = false;
-        ros::param::get("use_legacy_packets", legacy);
+        ros::param::get("use_legacy_packets", use_legacy_packets);
     } else {
         ros::param::set("use_legacy_packets", false);
     }
+
+
+    // ---- Transformation parameters ----
+
+    if (ros::param::has("transform_field/enabled")) {
+        ros::param::get("transform_field/enabled", transform_field);
+
+        float move_x;
+        ros::param::get("transform_field/move_x", move_x);
+        float move_y;
+        ros::param::get("transform_field/move_y", move_y);
+        float scale_x;
+        ros::param::get("transform_field/scale_x", scale_x);
+        float scale_y;
+        ros::param::get("transform_field/scale_y", scale_y);
+
+        ros::param::get("transform_field/rotate", transform_rotate_right_angle);
+
+        transform_move.x = move_x;
+        transform_move.y = move_y;
+        transform_scale.x = scale_x;
+        transform_scale.y = scale_y;
+    }
+
+    // ---- /Transformation parameters ----
 }
 
 
