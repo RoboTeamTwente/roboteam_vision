@@ -60,6 +60,8 @@ add_executable(roboteam_vision
     # Main executable program
     src/roboteam_vision.cpp
 
+    src/transform.cpp
+
     # Net code from ssl vision
     src/net/netraw.cpp
     src/net/netraw.h
@@ -72,7 +74,7 @@ target_link_libraries(roboteam_vision
     ${catkin_LIBRARIES}
     )
 add_dependencies(roboteam_vision
-    ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
     ${catkin_EXPORTED_TARGETS}
     )
 
@@ -83,7 +85,7 @@ target_link_libraries(crashtest
     ${catkin_LIBRARIES}
     )
 add_dependencies(roboteam_vision
-    ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
     ${catkin_EXPORTED_TARGETS}
     )
 

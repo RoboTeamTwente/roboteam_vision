@@ -19,6 +19,7 @@
 #include "roboteam_vision/convert/convert_geometry_current.h"
 #include "roboteam_vision/convert/convert_geometry_legacy.h"
 #include "roboteam_vision/convert/convert_referee.h"
+#include "roboteam_vision/transform.h"
 
 
 // Keeps track of which team is us.
