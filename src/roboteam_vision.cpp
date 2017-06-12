@@ -85,88 +85,12 @@ void sigIntHandler(int) {
     shuttingDown = true;
 }
 
-bool hasArg(std::vector<std::string> const & args, std::string const & arg) {
-    return std::find(args.begin(), args.end(), arg) != args.end();
-}
-
-bool MERGING = false;
-
-void swapBots3to6(roboteam_msgs::DetectionFrame & frame) {
-    // @Hack
-
-    auto isRobotPresent = [](std::vector<roboteam_msgs::DetectionRobot> const bots, unsigned int id) {
-        for (auto const & bot : bots) {
-            if (bot.robot_id == id) {
-                return true;
-            }
-        }
-
-        return false;
-    };
-
-    auto lookupBotIfPresent = [](std::vector<roboteam_msgs::DetectionRobot> const bots, unsigned int id) {
-        for (auto const & bot : bots) {
-            if (bot.robot_id == id) {
-                return bot;
-            }
-        }
-
-        return bots[0];
-    };
-
-    auto putBotIfPresent = [](std::vector<roboteam_msgs::DetectionRobot> & bots, roboteam_msgs::DetectionRobot const & bot, unsigned int id) {
-        for (auto & otherBot : bots) {
-            if (otherBot.robot_id == id) {
-                otherBot = bot;
-                otherBot.robot_id = id;
-                return;
-            }
-        }
-    };
-
-    std::string our_color = "yellow";
-    ros::param::get("our_color", our_color);
-
-    std::vector<roboteam_msgs::DetectionRobot> blue;
-    std::vector<roboteam_msgs::DetectionRobot> yellow;
-
-    if (our_color == "yellow") {
-        yellow = frame.us;
-        blue = frame.them;
-    } else {
-        blue = frame.us;
-        yellow = frame.them;
-    }
-
-    for (unsigned int i = 0; i < 3; ++i) {
-        bool yellowPresent = isRobotPresent(yellow, i + 3);
-        bool bluePresent = isRobotPresent(blue, i);
-
-        if (yellowPresent && bluePresent) {
-            auto robotYellow = lookupBotIfPresent(yellow, i + 3);
-            auto robotBlue = lookupBotIfPresent(blue, i);
-
-            putBotIfPresent(yellow, robotBlue, i + 3);
-            putBotIfPresent(blue, robotYellow, i);
-        }
-    }
-
-    if (our_color == "yellow") {
-        frame.us = yellow;
-        frame.them = blue;
-    } else {
-        frame.us = blue;
-        frame.them = yellow;
-    }
-}
-
 } // anonymous namespace
 
 // Sends a SSL_DetectionFrame out through the supplied publisher.
 void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool normalize_field) {
     uint cam_id = detectionFrame.camera_id();
 
-    // Check if we haven't already received this frame from this camera.
     // TODO: See if it is necessary to remove duplicate frames.
     // Are they even duplicate?
 
@@ -177,11 +101,6 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
         frame = rtt::normalizeDetectionFrame(frame);
     }
 
-    if (MERGING) {
-        // Swap around robots 3-5 between yellow and blue
-        swapBots3to6(frame);
-    }
-
     // Publish the frame.
     publisher.publish(frame);
 }
@@ -189,12 +108,6 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
 int main(int argc, char **argv) {
 
     std::vector<std::string> args(argv, argv + argc);
-
-    MERGING = hasArg(args, "--merge-mode");
-
-    if (MERGING) {
-        std::cout << "[Vision] Merge mode active\n";
-    }
 
     // Init ros.
     ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // What?
