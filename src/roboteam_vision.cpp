@@ -14,6 +14,7 @@
 
 #include "roboteam_utils/normalize.h"
 #include "roboteam_utils/constants.h"
+#include "roboteam_utils/Vector2.h"
 
 #include "roboteam_vision/convert/convert_detection.h"
 #include "roboteam_vision/convert/convert_geometry_current.h"
@@ -29,6 +30,12 @@ bool us_is_yellow = true;
 bool use_legacy_packets = false;
 bool ours_is_left = true;
 bool normalize_field = true;
+
+bool transform_field = false;
+rtt::Vector2 transform_move = rtt::Vector2(0, 0);
+rtt::Vector2 transform_scale = rtt::Vector2(1, 1);
+bool transform_rotate_right_angle = false;
+
 
 
 void update_parameters_from_ros() {
@@ -102,6 +109,10 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
         frame = rtt::normalizeDetectionFrame(frame);
     }
 
+    if (transform_field) {
+        frame = rtt::transformDetectionFrame(frame, transform_move, transform_scale, transform_rotate_right_angle);
+    }
+
     // Publish the frame.
     publisher.publish(frame);
 }
@@ -164,6 +175,10 @@ int main(int argc, char **argv) {
                         data = rtt::normalizeGeometryData(data);
                     }
 
+                    if (transform_field) {
+                        data = rtt::transformGeometryData(data, transform_move, transform_scale, transform_rotate_right_angle);
+                    }
+
                     // Publish the data.
                     geometry_pub.publish(data);
                 }
@@ -187,6 +202,10 @@ int main(int argc, char **argv) {
                         data = rtt::normalizeGeometryData(data);
                     }
 
+                    if (transform_field) {
+                        data = rtt::transformGeometryData(data, transform_move, transform_scale, transform_rotate_right_angle);
+                    }
+
                     // Publish the data.
                     geometry_pub.publish(data);
                 }
@@ -199,6 +218,10 @@ int main(int argc, char **argv) {
 
             if (normalize_field) {
                 data = rtt::normalizeRefereeData(data);
+            }
+
+            if (transform_field) {
+                data = rtt::transformRefereeData(data, transform_move, transform_scale, transform_rotate_right_angle);
             }
 
             // Publish the data.

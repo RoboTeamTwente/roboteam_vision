@@ -10,10 +10,16 @@ namespace rtt {
 
 using namespace roboteam_msgs;
 
-DetectionFrame transformDetectionFrame(DetectionFrame& world, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
+DetectionFrame transformDetectionFrame(DetectionFrame& frame, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
 
-GeometryData transformGeometryData(GeometryData& world, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
+GeometryData transformGeometryData(GeometryData& data, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
 
-RefereeData transformRefereeData(RefereeData& world, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
+RefereeData transformRefereeData(RefereeData& data, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
+
+
+
+DetectionBall transformBall(DetectionBall& ball, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
+
+DetectionRobot transformRobot(DetectionRobot& bot, rtt::Vector2 move, rtt::Vector2 scale, bool rotate);
 
 }

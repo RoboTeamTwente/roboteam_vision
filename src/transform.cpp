@@ -2,17 +2,42 @@
 
 namespace rtt {
 
-    using namespace roboteam_msgs;
+using namespace roboteam_msgs;
 
-    DetectionFrame transformDetectionFrame(DetectionFrame& world, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
+DetectionFrame transformDetectionFrame(DetectionFrame& frame, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
+    DetectionFrame newFrame = frame;
 
+    for (auto& ball : newFrame.balls) {
+        ball = transformBall(ball, move, scale, rotate);
     }
 
-    GeometryData transformGeometryData(GeometryData& world, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
-
+    for (auto& bot : newFrame.us) {
+        bot = transformRobot(bot, move, scale, rotate);
     }
 
-    RefereeData transformRefereeData(RefereeData& world, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
-        
+    for (auto& bot : newFrame.them) {
+        bot = transformRobot(bot, move, scale, rotate);
     }
+
+    return newFrame;
 }
+
+GeometryData transformGeometryData(GeometryData& data, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
+    return data;
+}
+
+RefereeData transformRefereeData(RefereeData& data, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
+    return data;
+}
+
+
+DetectionBall transformBall(DetectionBall& ball, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
+    return ball;
+}
+
+DetectionRobot transformRobot(DetectionRobot& bot, rtt::Vector2 move, rtt::Vector2 scale, bool rotate) {
+    return bot;
+}
+
+
+} // rtt
