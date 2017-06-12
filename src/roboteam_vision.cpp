@@ -1,5 +1,6 @@
 #include <string>
 #include <signal.h>
+#include <chrono>
 
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
@@ -22,119 +23,59 @@
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
-bool us_is_yellow;
-
+bool us_is_yellow = true;
 // Wether to use the legacy SSL protobuf packets.
-bool use_legacy_packets;
+bool use_legacy_packets = false;
+bool ours_is_left = true;
+bool normalize_field = true;
 
 
-/**
- * Sets the `our_color` parameter to the default "yellow".
- * Call if the parameter hasn't been set yet, or was set to garbage.
- */
-void default_our_color_parameter() {
-    // Default to yellow.
-    us_is_yellow = true;
-    ros::param::set("our_color", "yellow");
-}
+void update_parameters_from_ros() {
+    if (rtt::has_PARAM_NORMALIZE_FIELD()) {
+        rtt::get_PARAM_NORMALIZE_FIELD(normalize_field);
+    } else {
+        rtt::set_PARAM_NORMALIZE_FIELD(true);
+    }
 
+    if (rtt::has_PARAM_OUR_SIDE()) {
+        std::string our_side;
+        rtt::get_PARAM_OUR_SIDE(our_side);
 
-/**
- * Reads in the `our_color` parameter.
- * If the parameter is not set, defaults to yellow.
- */
-void read_our_color_parameter() {
-    std::string our_color;
-    if (ros::param::get("our_color", our_color)) {
+        if (our_side == "left") {
+            ours_is_left = true;
+        } else if (our_side == "right") {
+            ours_is_left = false;
+        } else {
+            rtt::set_PARAM_OUR_SIDE("left");
+        }
+    } else {
+        rtt::set_PARAM_OUR_SIDE("left");
+    }
+
+    if (rtt::has_PARAM_OUR_COLOR()) {
+        std::string our_color;
+        rtt::get_PARAM_OUR_COLOR(our_color);
+
         if (our_color == "yellow") {
             us_is_yellow = true;
         } else if (our_color == "blue") {
             us_is_yellow = false;
         } else {
-            default_our_color_parameter();
+            rtt::set_PARAM_OUR_COLOR("yellow");
         }
     } else {
-        default_our_color_parameter();
+        rtt::set_PARAM_OUR_COLOR("yellow");
+    }
+
+    if (ros::param::has("use_legacy_packets")) {
+        bool legacy = false;
+        ros::param::get("use_legacy_packets", legacy);
+    } else {
+        ros::param::set("use_legacy_packets", false);
     }
 }
 
 
-/**
- * Sets the `our_side` parameter to the default `right`.
- */
-void default_our_side_parameter() {
-    ros::param::set("our_side", "right");
-}
-
-
-/**
- * Reads in the `our_side` parameter.
- * If the parameter is not set, defaults to right.
- */
-void read_our_side_parameter() {
-    std::string our_side;
-    if (ros::param::get("our_side", our_side)) {
-        if (our_side == "left") {
-
-        } else if (our_side == "right") {
-
-        } else {
-            default_our_side_parameter();
-        }
-    } else {
-        default_our_side_parameter();
-    }
-}
-
-
-/**
- * Sets the `use_legacy_packets` parameter to the default `false`.
- */
-void default_use_legacy_packets_parameter() {
-    // Default to false.
-    use_legacy_packets = false;
-    ros::param::set("use_legacy_packets", use_legacy_packets);
-}
-
-
-/**
- * Reads in the `use_legacy_packets` parameter.
- * If the parameter is not set, calls `default_use_legacy_packets_parameter`.
- */
-void read_use_legacy_packets_parameter() {
-    bool legacy;
-    if (ros::param::get("use_legacy_packets", legacy)) {
-        // This can probably be done more concise.
-        // I just copied this from `read_our_color_parameter`.
-        if (legacy == true) {
-            use_legacy_packets = true;
-        } else if (legacy == false) {
-            use_legacy_packets = false;
-        } else {
-            default_use_legacy_packets_parameter();
-        }
-    } else {
-        default_use_legacy_packets_parameter();
-    }
-}
-
-
-
-/**
- * Resets the vision system.
- * To be called on `vision_reset`.
- *
- * Calls `read_our_color_parameter`.
- */
-bool vision_reset(std_srvs::Empty::Request& req,
-                  std_srvs::Empty::Response& res) {
-
-    read_our_color_parameter();
-    read_use_legacy_packets_parameter();
-    read_our_side_parameter();
-
-    return true;
-}
 
 namespace {
 
@@ -222,7 +163,7 @@ void swapBots3to6(roboteam_msgs::DetectionFrame & frame) {
 } // anonymous namespace
 
 // Sends a SSL_DetectionFrame out through the supplied publisher.
-void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool should_normalize) {
+void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool normalize_field) {
     uint cam_id = detectionFrame.camera_id();
 
     // Check if we haven't already received this frame from this camera.
@@ -232,7 +173,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
     // Convert the detection frame.
     roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
-    if (should_normalize) {
+    if (normalize_field) {
         frame = rtt::normalizeDetectionFrame(frame);
     }
 
@@ -272,9 +213,6 @@ int main(int argc, char **argv) {
     ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1, true);
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1, true);
 
-    // Add the service to reset the last frame trackers.
-    ros::ServiceServer reset_service = n.advertiseService("vision_reset", vision_reset);
-
 
     RoboCupSSLClient vision_client = RoboCupSSLClient(10006, "224.5.23.2");
     RoboCupSSLClient refbox_client = RoboCupSSLClient(10003, "224.5.23.1");;
@@ -283,6 +221,10 @@ int main(int argc, char **argv) {
     vision_client.open(false);
     refbox_client.open(false);
 
+    std::chrono::high_resolution_clock::time_point last_parameter_update_time = std::chrono::high_resolution_clock::now();
+
+    update_parameters_from_ros();
+
     ROS_INFO("Vision ready.");
 
     SSL_WrapperPacket vision_packet;
@@ -290,20 +232,6 @@ int main(int argc, char **argv) {
     SSL_Referee refbox_packet;
 
     while (ros::ok() && !shuttingDown) {
-        // Read the parameters.
-        read_our_color_parameter();
-        read_use_legacy_packets_parameter();
-        read_our_side_parameter();
-
-        // Do we need to normalize the frame?
-        bool normalize_field = false;
-        rtt::get_PARAM_NORMALIZE_FIELD(normalize_field);
-
-        std::string our_side = "left";
-        rtt::get_PARAM_OUR_SIDE(our_side);
-
-        bool should_normalize = our_side == "right" && normalize_field;
-
         if (use_legacy_packets) {
 
             // Receive legacy packets.
@@ -311,14 +239,14 @@ int main(int argc, char **argv) {
 
                 // Detection frame.
                 if (vision_packet_legacy.has_detection()) {
-                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, should_normalize);
+                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, normalize_field);
                 }
 
                 if (vision_packet_legacy.has_geometry()) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
 
-                    if (should_normalize) {
+                    if (normalize_field) {
                         data = rtt::normalizeGeometryData(data);
                     }
 
@@ -334,14 +262,14 @@ int main(int argc, char **argv) {
 
                 // Detection frame.
                 if (vision_packet.has_detection()) {
-                    send_detection_frame(vision_packet.detection(), detection_pub, should_normalize);
+                    send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
                 }
 
                 if (vision_packet.has_geometry()) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
 
-                    if (should_normalize) {
+                    if (normalize_field) {
                         data = rtt::normalizeGeometryData(data);
                     }
 
@@ -355,14 +283,27 @@ int main(int argc, char **argv) {
             // Convert the referee data.
             roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
-            if (should_normalize) {
+            if (normalize_field) {
                 data = rtt::normalizeRefereeData(data);
             }
-
 
             // Publish the data.
             refbox_pub.publish(data);
         }
+
+        // ---- Param updates ----
+
+        auto time_now = std::chrono::high_resolution_clock::now();
+        auto time_diff = time_now - last_parameter_update_time;
+
+        // Every second...
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(time_diff).count() > 1000) {
+            last_parameter_update_time = time_now;
+
+            update_parameters_from_ros();
+        }
+
+        // ---- /Param updates ----
 
         ros::spinOnce();
         loop_rate.sleep();
