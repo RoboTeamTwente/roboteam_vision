@@ -108,8 +108,8 @@ void update_parameters_from_ros() {
         float relative_width = new_width / field_size.x;
         float relative_height = new_height / field_size.y;
 
-        transform_move.x = left + new_width / 2;
-        transform_move.y = bottom + new_height / 2;
+        transform_move.x = (right - left) / 2;
+        transform_move.y = (top - bottom) / 2;
 
         if (transform_rotate_right_angle) {
             transform_scale.x = new_height / field_size.x;

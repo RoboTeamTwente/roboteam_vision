@@ -86,7 +86,7 @@ void transformVector(roboteam_msgs::Vector2f& vec, rtt::Vector2& move, bool& rot
         vec.x = -vec.y;
         vec.y = temp_x;
 
-        vec.x += move.y;
+        vec.x += -move.y;
         vec.y += move.x;
     } else {
         vec.x += move.x;
