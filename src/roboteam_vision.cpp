@@ -31,6 +31,10 @@ bool use_legacy_packets = false;
 bool ours_is_left = true;
 bool normalize_field = true;
 
+// Field size used for calculating the transormation scale.
+// Is updated when a GeometryData packet arrives.
+rtt::Vector2 field_size = rtt::Vector2(6, 9);
+
 bool transform_field = false;
 rtt::Vector2 transform_move = rtt::Vector2(0, 0);
 rtt::Vector2 transform_scale = rtt::Vector2(1, 1);
@@ -86,22 +90,34 @@ void update_parameters_from_ros() {
 
     if (ros::param::has("transform_field/enabled")) {
         ros::param::get("transform_field/enabled", transform_field);
-
-        float move_x = 0;
-        ros::param::get("transform_field/move/x", move_x);
-        float move_y = 0;
-        ros::param::get("transform_field/move/y", move_y);
-        float scale_x = 1;
-        ros::param::get("transform_field/scale/x", scale_x);
-        float scale_y = 1;
-        ros::param::get("transform_field/scale/y", scale_y);
-
         ros::param::get("transform_field/rotate", transform_rotate_right_angle);
 
-        transform_move.x = move_x;
-        transform_move.y = move_y;
-        transform_scale.x = scale_x;
-        transform_scale.y = scale_y;
+        float top = 0;
+        float bottom = 0;
+        float left = 0;
+        float right = 0;
+
+        ros::param::get("transform_field/offset/top", top);
+        ros::param::get("transform_field/offset/bottom", bottom);
+        ros::param::get("transform_field/offset/left", left);
+        ros::param::get("transform_field/offset/right", right);
+
+        float new_width = field_size.x - (left + right);
+        float new_height = field_size.y - (top + bottom);
+
+        float relative_width = new_width / field_size.x;
+        float relative_height = new_height / field_size.y;
+
+        transform_move.x = left + new_width / 2;
+        transform_move.y = bottom + new_height / 2;
+
+        if (transform_rotate_right_angle) {
+            transform_scale.x = new_height / field_size.x;
+            transform_scale.y = new_width / field_size.y;
+        } else {
+            transform_scale.x = relative_width;
+            transform_scale.y = relative_height;
+        }
     }
 
     // ---- /Transformation parameters ----
@@ -129,12 +145,12 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
     // Convert the detection frame.
     roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
-    if (normalize_field) {
-        frame = rtt::normalizeDetectionFrame(frame);
-    }
-
     if (transform_field) {
         rtt::transformDetectionFrame(frame, transform_move, transform_rotate_right_angle);
+    }
+
+    if (normalize_field) {
+        frame = rtt::normalizeDetectionFrame(frame);
     }
 
     // Publish the frame.
@@ -195,12 +211,15 @@ int main(int argc, char **argv) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
 
-                    if (normalize_field) {
-                        data = rtt::normalizeGeometryData(data);
-                    }
+                    field_size.x = data.field.field_length;
+                    field_size.y = data.field.field_width;
 
                     if (transform_field) {
                         rtt::scaleGeometryData(data, transform_scale);
+                    }
+
+                    if (normalize_field) {
+                        data = rtt::normalizeGeometryData(data);
                     }
 
                     // Publish the data.
@@ -222,12 +241,15 @@ int main(int argc, char **argv) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
 
-                    if (normalize_field) {
-                        data = rtt::normalizeGeometryData(data);
-                    }
+                    field_size.x = data.field.field_length;
+                    field_size.y = data.field.field_width;
 
                     if (transform_field) {
                         rtt::scaleGeometryData(data, transform_scale);
+                    }
+
+                    if (normalize_field) {
+                        data = rtt::normalizeGeometryData(data);
                     }
 
                     // Publish the data.
@@ -240,12 +262,12 @@ int main(int argc, char **argv) {
             // Convert the referee data.
             roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
-            if (normalize_field) {
-                data = rtt::normalizeRefereeData(data);
-            }
-
             if (transform_field) {
                 rtt::transformRefereeData(data, transform_move, transform_rotate_right_angle);
+            }
+
+            if (normalize_field) {
+                data = rtt::normalizeRefereeData(data);
             }
 
             // Publish the data.
