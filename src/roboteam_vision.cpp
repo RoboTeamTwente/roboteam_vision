@@ -87,14 +87,14 @@ void update_parameters_from_ros() {
     if (ros::param::has("transform_field/enabled")) {
         ros::param::get("transform_field/enabled", transform_field);
 
-        float move_x;
-        ros::param::get("transform_field/move_x", move_x);
-        float move_y;
-        ros::param::get("transform_field/move_y", move_y);
-        float scale_x;
-        ros::param::get("transform_field/scale_x", scale_x);
-        float scale_y;
-        ros::param::get("transform_field/scale_y", scale_y);
+        float move_x = 0;
+        ros::param::get("transform_field/move/x", move_x);
+        float move_y = 0;
+        ros::param::get("transform_field/move/y", move_y);
+        float scale_x = 1;
+        ros::param::get("transform_field/scale/x", scale_x);
+        float scale_y = 1;
+        ros::param::get("transform_field/scale/y", scale_y);
 
         ros::param::get("transform_field/rotate", transform_rotate_right_angle);
 
@@ -134,7 +134,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
     }
 
     if (transform_field) {
-        frame = rtt::transformDetectionFrame(frame, transform_move, transform_scale, transform_rotate_right_angle);
+        rtt::transformDetectionFrame(frame, transform_move, transform_rotate_right_angle);
     }
 
     // Publish the frame.
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (transform_field) {
-                        data = rtt::transformGeometryData(data, transform_move, transform_scale, transform_rotate_right_angle);
+                        rtt::scaleGeometryData(data, transform_scale);
                     }
 
                     // Publish the data.
@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (transform_field) {
-                        data = rtt::transformGeometryData(data, transform_move, transform_scale, transform_rotate_right_angle);
+                        rtt::scaleGeometryData(data, transform_scale);
                     }
 
                     // Publish the data.
@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
             }
 
             if (transform_field) {
-                data = rtt::transformRefereeData(data, transform_move, transform_scale, transform_rotate_right_angle);
+                rtt::transformRefereeData(data, transform_move, transform_rotate_right_angle);
             }
 
             // Publish the data.
