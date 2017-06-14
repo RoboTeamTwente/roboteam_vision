@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
                     roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
 
                     if (normalize_field) {
-                        data = rtt::normalizeGeometryData(data);
+                        // data = rtt::normalizeGeometryData(data);
                     }
 
                     // Publish the data.
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
                     roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
 
                     if (normalize_field) {
-                        data = rtt::normalizeGeometryData(data);
+                        // data = rtt::normalizeGeometryData(data);
                     }
 
                     // Publish the data.
