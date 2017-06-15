@@ -1,5 +1,6 @@
 #include <string>
 #include <signal.h>
+#include <chrono>
 
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
@@ -262,15 +263,15 @@ int main(int argc, char **argv) {
     ros::NodeHandle n;
 
     // Run at 200 hz.
-    ros::Rate loop_rate(60);
+    ros::Rate loop_rate(80);
 
     // Create the publishers.
     // The `true` means that the messages will be latched.
     // When a new node subscribes, it will automatically get the latest message of the topic,
     // even if that was published a minute ago.
-    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1, true);
-    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1, true);
-    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1, true);
+    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000, true);
+    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
+    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
     // Add the service to reset the last frame trackers.
     ros::ServiceServer reset_service = n.advertiseService("vision_reset", vision_reset);
@@ -289,7 +290,12 @@ int main(int argc, char **argv) {
     RoboCup2014Legacy::Wrapper::SSL_WrapperPacket vision_packet_legacy;
     SSL_Referee refbox_packet;
 
+    // int detectionPackets = 0;
+    // using namespace std::chrono;
+    // auto lastStatistics = std::chrono::high_resolution_clock::now();
+
     while (ros::ok() && !shuttingDown) {
+
         // Read the parameters.
         read_our_color_parameter();
         read_use_legacy_packets_parameter();
@@ -334,7 +340,8 @@ int main(int argc, char **argv) {
 
                 // Detection frame.
                 if (vision_packet.has_detection()) {
-                    send_detection_frame(vision_packet.detection(), detection_pub, should_normalize);
+                    send_detection_frame(vision_packet.detection(), detection_pub, should_normalize);           
+                    // detectionPackets++;
                 }
 
                 if (vision_packet.has_geometry()) {
@@ -366,6 +373,16 @@ int main(int argc, char **argv) {
 
         ros::spinOnce();
         loop_rate.sleep();
+
+        // auto timeNow = high_resolution_clock::now();
+        // auto timeDiff = timeNow - lastStatistics;
+
+        // // Every second...
+        // if (duration_cast<milliseconds>(timeDiff).count() > 1000) {
+            // std::cout << "Detectionpackets: " << detectionPackets << "\n";
+            // detectionPackets = 0;
+            // lastStatistics = timeNow;
+        // }
     }
 
     // Destructors do not call close properly. Just to be sure we do.

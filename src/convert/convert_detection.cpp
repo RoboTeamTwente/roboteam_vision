@@ -19,6 +19,8 @@ namespace rtt {
         rosFrame.t_sent = protoFrame.t_sent();
         rosFrame.camera_id = protoFrame.camera_id();
 
+        // std::cout << "Vision balls: " << protoFrame.balls().size() << "\n";
+        // std::cout << "Vision camera id: " << protoFrame.camera_id() << "\n";
 
         for (int i = 0; i < protoFrame.balls().size(); ++i) {
             SSL_DetectionBall protoBall = protoFrame.balls().Get(i);
