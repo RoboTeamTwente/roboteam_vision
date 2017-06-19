@@ -26,7 +26,7 @@
 bool us_is_yellow = true;
 // Wether to use the legacy SSL protobuf packets.
 bool use_legacy_packets = false;
-bool ours_is_left = true;
+bool our_side_is_left = true;
 bool normalize_field = true;
 
 
@@ -42,9 +42,9 @@ void update_parameters_from_ros() {
         rtt::get_PARAM_OUR_SIDE(our_side);
 
         if (our_side == "left") {
-            ours_is_left = true;
+            our_side_is_left = true;
         } else if (our_side == "right") {
-            ours_is_left = false;
+            our_side_is_left = false;
         } else {
             rtt::set_PARAM_OUR_SIDE("left");
         }
@@ -97,7 +97,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
     // Convert the detection frame.
     roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
-    if (normalize_field) {
+    if (normalize_field && !our_side_is_left) {
         frame = rtt::normalizeDetectionFrame(frame);
     }
 
@@ -163,10 +163,6 @@ int main(int argc, char **argv) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
 
-                    if (normalize_field) {
-                        // data = rtt::normalizeGeometryData(data);
-                    }
-
                     // Publish the data.
                     geometry_pub.publish(data);
                 }
@@ -186,10 +182,6 @@ int main(int argc, char **argv) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
 
-                    if (normalize_field) {
-                        // data = rtt::normalizeGeometryData(data);
-                    }
-
                     // Publish the data.
                     geometry_pub.publish(data);
                 }
@@ -200,7 +192,7 @@ int main(int argc, char **argv) {
             // Convert the referee data.
             roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
-            if (normalize_field) {
+            if (normalize_field && !our_side_is_left) {
                 data = rtt::normalizeRefereeData(data);
             }
 
