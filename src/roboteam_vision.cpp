@@ -38,6 +38,11 @@ rtt::Vector2 field_size = rtt::Vector2(6, 9);
 bool transform_field = false;
 rtt::Vector2 transform_move = rtt::Vector2(0, 0);
 rtt::Vector2 transform_scale = rtt::Vector2(1, 1);
+float transform_top = 0;
+float transform_bottom = 0;
+float transform_left = 0;
+float transform_right = 0;
+
 bool transform_rotate_right_angle = false;
 
 
@@ -92,24 +97,19 @@ void update_parameters_from_ros() {
         ros::param::get("transform_field/enabled", transform_field);
         ros::param::get("transform_field/rotate", transform_rotate_right_angle);
 
-        float top = 0;
-        float bottom = 0;
-        float left = 0;
-        float right = 0;
+        ros::param::get("transform_field/offset/top", transform_top);
+        ros::param::get("transform_field/offset/bottom", transform_bottom);
+        ros::param::get("transform_field/offset/left", transform_left);
+        ros::param::get("transform_field/offset/right", transform_right);
 
-        ros::param::get("transform_field/offset/top", top);
-        ros::param::get("transform_field/offset/bottom", bottom);
-        ros::param::get("transform_field/offset/left", left);
-        ros::param::get("transform_field/offset/right", right);
-
-        float new_width = field_size.x - (left + right);
-        float new_height = field_size.y - (top + bottom);
+        float new_width = field_size.x - (transform_left + transform_right);
+        float new_height = field_size.y - (transform_top + transform_bottom);
 
         float relative_width = new_width / field_size.x;
         float relative_height = new_height / field_size.y;
 
-        transform_move.x = (right - left) / 2;
-        transform_move.y = (top - bottom) / 2;
+        transform_move.x = (transform_right - transform_left) / 2;
+        transform_move.y = (transform_top - transform_bottom) / 2;
 
         if (transform_rotate_right_angle) {
             transform_scale.x = new_height / field_size.x;
@@ -146,6 +146,15 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
     roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
     if (transform_field) {
+        rtt::dropBallsOutsideTransform(
+                frame, 
+                field_size,
+                transform_top, 
+                transform_right,
+                transform_bottom,
+                transform_left
+                );
+
         rtt::transformDetectionFrame(frame, transform_move, transform_rotate_right_angle);
     }
 
