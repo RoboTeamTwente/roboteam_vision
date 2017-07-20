@@ -28,7 +28,7 @@
 bool us_is_yellow = true;
 // Wether to use the legacy SSL protobuf packets.
 bool use_legacy_packets = false;
-bool ours_is_left = true;
+bool our_side_is_left = true;
 bool normalize_field = true;
 
 // Field size used for calculating the transormation scale.
@@ -54,9 +54,9 @@ void update_parameters_from_ros() {
         rtt::get_PARAM_OUR_SIDE(our_side);
 
         if (our_side == "left") {
-            ours_is_left = true;
+            our_side_is_left = true;
         } else if (our_side == "right") {
-            ours_is_left = false;
+            our_side_is_left = false;
         } else {
             rtt::set_PARAM_OUR_SIDE("left");
         }
@@ -149,7 +149,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
         rtt::transformDetectionFrame(frame, transform_move, transform_rotate_right_angle);
     }
 
-    if (normalize_field) {
+    if (normalize_field && !our_side_is_left) {
         frame = rtt::normalizeDetectionFrame(frame);
     }
 
@@ -168,15 +168,15 @@ int main(int argc, char **argv) {
     ros::NodeHandle n;
 
     // Run at 200 hz.
-    ros::Rate loop_rate(60);
+    ros::Rate loop_rate(80);
 
     // Create the publishers.
     // The `true` means that the messages will be latched.
     // When a new node subscribes, it will automatically get the latest message of the topic,
     // even if that was published a minute ago.
-    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1, true);
-    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1, true);
-    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1, true);
+    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000, true);
+    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
+    ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
 
     RoboCupSSLClient vision_client = RoboCupSSLClient(10006, "224.5.23.2");
@@ -195,6 +195,10 @@ int main(int argc, char **argv) {
     SSL_WrapperPacket vision_packet;
     RoboCup2014Legacy::Wrapper::SSL_WrapperPacket vision_packet_legacy;
     SSL_Referee refbox_packet;
+
+    // int detectionPackets = 0;
+    // using namespace std::chrono;
+    // auto lastStatistics = std::chrono::high_resolution_clock::now();
 
     while (ros::ok() && !shuttingDown) {
         if (use_legacy_packets) {
@@ -218,9 +222,10 @@ int main(int argc, char **argv) {
                         rtt::scaleGeometryData(data, transform_scale);
                     }
 
-                    if (normalize_field) {
-                        data = rtt::normalizeGeometryData(data);
-                    }
+                    // Not sure if this is needed - Bob
+                    // if (normalize_field) {
+                        // data = rtt::normalizeGeometryData(data);
+                    // }
 
                     // Publish the data.
                     geometry_pub.publish(data);
@@ -248,9 +253,10 @@ int main(int argc, char **argv) {
                         rtt::scaleGeometryData(data, transform_scale);
                     }
 
-                    if (normalize_field) {
-                        data = rtt::normalizeGeometryData(data);
-                    }
+                    // Not sure if this is needed either - Bob
+                    // if (normalize_field) {
+                        // data = rtt::normalizeGeometryData(data);
+                    // }
 
                     // Publish the data.
                     geometry_pub.publish(data);
@@ -266,7 +272,7 @@ int main(int argc, char **argv) {
                 rtt::transformRefereeData(data, transform_move, transform_rotate_right_angle);
             }
 
-            if (normalize_field) {
+            if (normalize_field && !our_side_is_left) {
                 data = rtt::normalizeRefereeData(data);
             }
 
@@ -290,6 +296,16 @@ int main(int argc, char **argv) {
 
         ros::spinOnce();
         loop_rate.sleep();
+
+        // auto timeNow = high_resolution_clock::now();
+        // auto timeDiff = timeNow - lastStatistics;
+
+        // // Every second...
+        // if (duration_cast<milliseconds>(timeDiff).count() > 1000) {
+            // std::cout << "Detectionpackets: " << detectionPackets << "\n";
+            // detectionPackets = 0;
+            // lastStatistics = timeNow;
+        // }
     }
 
     // Destructors do not call close properly. Just to be sure we do.
