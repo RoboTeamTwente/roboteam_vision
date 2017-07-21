@@ -1,7 +1,7 @@
 
-#include "convert_referee.h"
+#include "roboteam_vision/convert/convert_referee.h"
 
-#include "convert_units.h"
+#include "roboteam_vision/convert/convert_units.h"
 
 
 namespace rtt {

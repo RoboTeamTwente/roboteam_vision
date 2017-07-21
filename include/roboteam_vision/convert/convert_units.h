@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cmath>
+
 namespace rtt {
-    const float PI = 3.14159265359;
-    const float HALF_PI = 1.57079632679;
 
     /**
      * Converts the milimeters used by SSL vision to meters.

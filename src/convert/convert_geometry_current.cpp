@@ -2,7 +2,7 @@
  * Functions to convert the current SSL geometry packets to the ROS format.
  */
 
-#include "convert_geometry_current.h"
+#include "roboteam_vision/convert/convert_geometry_current.h"
 
 
 namespace rtt {
@@ -26,10 +26,25 @@ namespace rtt {
 
     /**
      * Converts a protoBuf GeometryCameraCalibration to the ROS version.
-     * TODO: Actually implement this one.
      */
     roboteam_msgs::GeometryCameraCalibration convert_geometry_camera_calibration(SSL_GeometryCameraCalibration protoCal) {
         roboteam_msgs::GeometryCameraCalibration rosCal;
+
+        rosCal.camera_id = protoCal.camera_id();
+        rosCal.focal_length = mm_to_m(protoCal.focal_length());
+        rosCal.principal_point_x = mm_to_m(protoCal.principal_point_x());
+        rosCal.principal_point_y = mm_to_m(protoCal.principal_point_y());
+        rosCal.distortion = protoCal.distortion();
+        rosCal.q0 = protoCal.q0();
+        rosCal.q1 = protoCal.q1();
+        rosCal.q2 = protoCal.q2();
+        rosCal.q3 = protoCal.q3();
+        rosCal.tx = mm_to_m(protoCal.tx());
+        rosCal.ty = mm_to_m(protoCal.ty());
+        rosCal.tz = mm_to_m(protoCal.tz());
+        rosCal.derived_camera_world_tx = mm_to_m(protoCal.derived_camera_world_tx());
+        rosCal.derived_camera_world_ty = mm_to_m(protoCal.derived_camera_world_ty());
+        rosCal.derived_camera_world_tz = mm_to_m(protoCal.derived_camera_world_tz());
 
         return rosCal;
     }

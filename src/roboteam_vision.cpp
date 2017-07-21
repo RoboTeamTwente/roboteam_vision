@@ -1,4 +1,6 @@
 #include <string>
+#include <signal.h>
+#include <chrono>
 
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
@@ -10,179 +12,172 @@
 #include "roboteam_utils/messages_robocup_ssl_wrapper.pb.h"
 #include "roboteam_utils/messages_robocup_ssl_wrapper_legacy.pb.h"
 
-#include "convert/convert_detection.h"
-#include "convert/convert_geometry_current.h"
-#include "convert/convert_geometry_legacy.h"
-#include "convert/convert_referee.h"
+#include "roboteam_utils/normalize.h"
+#include "roboteam_utils/constants.h"
+#include "roboteam_utils/Vector2.h"
 
+#include "roboteam_vision/convert/convert_detection.h"
+#include "roboteam_vision/convert/convert_geometry_current.h"
+#include "roboteam_vision/convert/convert_geometry_legacy.h"
+#include "roboteam_vision/convert/convert_referee.h"
+#include "roboteam_vision/transform.h"
 
-// The max amount of cameras.
-const uint NUM_CAMS = 5;
-
-// Keeps track of the last frames sent by the cameras.
-// This allows us to drop duplicate or delayed frames.
-uint last_frames [NUM_CAMS];
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
-bool us_is_yellow;
-
+bool us_is_yellow = true;
 // Wether to use the legacy SSL protobuf packets.
-bool use_legacy_packets;
+bool use_legacy_packets = false;
+bool our_side_is_left = true;
+bool normalize_field = true;
+
+// Field size used for calculating the transormation scale.
+// Is updated when a GeometryData packet arrives.
+rtt::Vector2 field_size = rtt::Vector2(6, 9);
+
+bool transform_field = false;
+rtt::Vector2 transform_move = rtt::Vector2(0, 0);
+rtt::Vector2 transform_scale = rtt::Vector2(1, 1);
+float transform_top = 0;
+float transform_bottom = 0;
+float transform_left = 0;
+float transform_right = 0;
+
+bool transform_rotate_right_angle = false;
 
 
-/**
- * Sets the `our_color` parameter to the default "yellow".
- * Call if the parameter hasn't been set yet, or was set to garbage.
- */
-void default_our_color_parameter() {
-    // Default to yellow.
-    us_is_yellow = true;
-    ros::param::set("our_color", "yellow");
-}
 
+void update_parameters_from_ros() {
+    if (rtt::has_PARAM_NORMALIZE_FIELD()) {
+        rtt::get_PARAM_NORMALIZE_FIELD(normalize_field);
+    } else {
+        rtt::set_PARAM_NORMALIZE_FIELD(true);
+    }
 
-/**
- * Reads in the `our_color` parameter.
- * If the parameter is not set, defaults to yellow.
- */
-void read_our_color_parameter() {
-    std::string our_color;
-    if (ros::param::get("our_color", our_color)) {
+    if (rtt::has_PARAM_OUR_SIDE()) {
+        std::string our_side;
+        rtt::get_PARAM_OUR_SIDE(our_side);
+
+        if (our_side == "left") {
+            our_side_is_left = true;
+        } else if (our_side == "right") {
+            our_side_is_left = false;
+        } else {
+            rtt::set_PARAM_OUR_SIDE("left");
+        }
+    } else {
+        rtt::set_PARAM_OUR_SIDE("left");
+    }
+
+    if (rtt::has_PARAM_OUR_COLOR()) {
+        std::string our_color;
+        rtt::get_PARAM_OUR_COLOR(our_color);
+
         if (our_color == "yellow") {
             us_is_yellow = true;
         } else if (our_color == "blue") {
             us_is_yellow = false;
         } else {
-            default_our_color_parameter();
+            rtt::set_PARAM_OUR_COLOR("yellow");
         }
     } else {
-        default_our_color_parameter();
+        rtt::set_PARAM_OUR_COLOR("yellow");
     }
-}
+
+    if (ros::param::has("use_legacy_packets")) {
+        ros::param::get("use_legacy_packets", use_legacy_packets);
+    } else {
+        ros::param::set("use_legacy_packets", false);
+    }
 
 
-/**
- * Sets the `our_field_side` parameter to the default `right`.
- */
-void default_our_field_side_parameter() {
-    ros::param::set("our_field_side", "right");
-}
+    // ---- Transformation parameters ----
 
+    if (ros::param::has("transform_field/enabled")) {
+        ros::param::get("transform_field/enabled", transform_field);
+        ros::param::get("transform_field/rotate", transform_rotate_right_angle);
 
-/**
- * Reads in the `our_field_side` parameter.
- * If the parameter is not set, defaults to right.
- */
-void read_our_field_side_parameter() {
-    std::string our_field_side;
-    if (ros::param::get("our_field_side", our_field_side)) {
-        if (our_field_side == "left") {
+        ros::param::get("transform_field/offset/top", transform_top);
+        ros::param::get("transform_field/offset/bottom", transform_bottom);
+        ros::param::get("transform_field/offset/left", transform_left);
+        ros::param::get("transform_field/offset/right", transform_right);
 
-        } else if (our_field_side == "right") {
+        float new_width = field_size.x - (transform_left + transform_right);
+        float new_height = field_size.y - (transform_top + transform_bottom);
 
+        float relative_width = new_width / field_size.x;
+        float relative_height = new_height / field_size.y;
+
+        transform_move.x = (transform_right - transform_left) / 2;
+        transform_move.y = (transform_top - transform_bottom) / 2;
+
+        if (transform_rotate_right_angle) {
+            transform_scale.x = new_height / field_size.x;
+            transform_scale.y = new_width / field_size.y;
         } else {
-            default_our_field_side_parameter();
+            transform_scale.x = relative_width;
+            transform_scale.y = relative_height;
         }
-    } else {
-        default_our_field_side_parameter();
     }
+
+    // ---- /Transformation parameters ----
 }
 
 
-/**
- * Sets the `use_legacy_packets` parameter to the default `false`.
- */
-void default_use_legacy_packets_parameter() {
-    // Default to false.
-    use_legacy_packets = false;
-    ros::param::set("use_legacy_packets", use_legacy_packets);
+
+namespace {
+
+bool shuttingDown = false;
+
+void sigIntHandler(int) {
+    shuttingDown = true;
 }
 
-
-/**
- * Reads in the `use_legacy_packets` parameter.
- * If the parameter is not set, calls `default_use_legacy_packets_parameter`.
- */
-void read_use_legacy_packets_parameter() {
-    bool legacy;
-    if (ros::param::get("use_legacy_packets", legacy)) {
-        // This can probably be done more concise.
-        // I just copied this from `read_our_color_parameter`.
-        if (legacy == true) {
-            use_legacy_packets = true;
-        } else if (legacy == false) {
-            use_legacy_packets = false;
-        } else {
-            default_use_legacy_packets_parameter();
-        }
-    } else {
-        default_use_legacy_packets_parameter();
-    }
-}
-
-
-/**
- * Resets the 'last_frames' array back to 0.
- */
-void reset_frames() {
-    for (int i = 0; i < NUM_CAMS; ++i) {
-        last_frames[i] = 0;
-    }
-}
-
-
-/**
- * Resets the vision system.
- * To be called on `vision_reset`.
- *
- * Calls `read_our_color_parameter`
- * and calls `reset_frames`.
- */
-bool vision_reset(std_srvs::Empty::Request& req,
-                  std_srvs::Empty::Response& res) {
-
-    read_our_color_parameter();
-    read_use_legacy_packets_parameter();
-    read_our_field_side_parameter();
-
-    reset_frames();
-
-    return true;
-}
-
+} // anonymous namespace
 
 // Sends a SSL_DetectionFrame out through the supplied publisher.
-void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher) {
+void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publisher, bool normalize_field) {
     uint cam_id = detectionFrame.camera_id();
 
-    if (cam_id < NUM_CAMS) {
-        // Check if we haven't already received this frame from this camera.
-        // TODO: See if it is necessary to remove duplicate frames.
-        // Are they even duplicate?
-        // if (protoFrame.frame_number() > last_frames[cam_id]) {
+    // TODO: See if it is necessary to remove duplicate frames.
+    // Are they even duplicate?
 
-            last_frames[cam_id] = detectionFrame.frame_number();
+    // Convert the detection frame.
+    roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
-            // Convert the detection frame.
-            roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
+    if (transform_field) {
+        rtt::dropBallsOutsideTransform(
+                frame, 
+                field_size,
+                transform_top, 
+                transform_right,
+                transform_bottom,
+                transform_left
+                );
 
-            // Publish the frame.
-            publisher.publish(frame);
-        //}
+        rtt::transformDetectionFrame(frame, transform_move, transform_rotate_right_angle);
     }
+
+    if (normalize_field && !our_side_is_left) {
+        frame = rtt::normalizeDetectionFrame(frame);
+    }
+
+    // Publish the frame.
+    publisher.publish(frame);
 }
 
+int main(int argc, char **argv) {
 
+    std::vector<std::string> args(argv, argv + argc);
 
-int main(int argc, char **argv)
-{
     // Init ros.
-    ros::init(argc, argv, "roboteam_msgs");
+    ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // What?
+    // Flower power!
+    signal(SIGINT, sigIntHandler);
     ros::NodeHandle n;
 
     // Run at 200 hz.
-    ros::Rate loop_rate(200);
+    ros::Rate loop_rate(80);
 
     // Create the publishers.
     // The `true` means that the messages will be latched.
@@ -192,9 +187,6 @@ int main(int argc, char **argv)
     ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
-    // Add the service to reset the last frame trackers.
-    ros::ServiceServer reset_service = n.advertiseService("vision_reset", vision_reset);
-
 
     RoboCupSSLClient vision_client = RoboCupSSLClient(10006, "224.5.23.2");
     RoboCupSSLClient refbox_client = RoboCupSSLClient(10003, "224.5.23.1");;
@@ -203,10 +195,9 @@ int main(int argc, char **argv)
     vision_client.open(false);
     refbox_client.open(false);
 
-    // Read the parameters.
-    read_our_color_parameter();
-    read_use_legacy_packets_parameter();
-    read_our_field_side_parameter();
+    std::chrono::high_resolution_clock::time_point last_parameter_update_time = std::chrono::high_resolution_clock::now();
+
+    update_parameters_from_ros();
 
     ROS_INFO("Vision ready.");
 
@@ -214,7 +205,11 @@ int main(int argc, char **argv)
     RoboCup2014Legacy::Wrapper::SSL_WrapperPacket vision_packet_legacy;
     SSL_Referee refbox_packet;
 
-    while (ros::ok()) {
+    // int detectionPackets = 0;
+    // using namespace std::chrono;
+    // auto lastStatistics = std::chrono::high_resolution_clock::now();
+
+    while (ros::ok() && !shuttingDown) {
         if (use_legacy_packets) {
 
             // Receive legacy packets.
@@ -222,12 +217,24 @@ int main(int argc, char **argv)
 
                 // Detection frame.
                 if (vision_packet_legacy.has_detection()) {
-                    send_detection_frame(vision_packet_legacy.detection(), detection_pub);
+                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, normalize_field);
                 }
 
                 if (vision_packet_legacy.has_geometry()) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
+
+                    field_size.x = data.field.field_length;
+                    field_size.y = data.field.field_width;
+
+                    if (transform_field) {
+                        rtt::scaleGeometryData(data, transform_scale);
+                    }
+
+                    // Not sure if this is needed - Bob
+                    // if (normalize_field) {
+                        // data = rtt::normalizeGeometryData(data);
+                    // }
 
                     // Publish the data.
                     geometry_pub.publish(data);
@@ -241,12 +248,24 @@ int main(int argc, char **argv)
 
                 // Detection frame.
                 if (vision_packet.has_detection()) {
-                    send_detection_frame(vision_packet.detection(), detection_pub);
+                    send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
                 }
 
                 if (vision_packet.has_geometry()) {
                     // Convert the geometry frame.
                     roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
+
+                    field_size.x = data.field.field_length;
+                    field_size.y = data.field.field_width;
+
+                    if (transform_field) {
+                        rtt::scaleGeometryData(data, transform_scale);
+                    }
+
+                    // Not sure if this is needed either - Bob
+                    // if (normalize_field) {
+                        // data = rtt::normalizeGeometryData(data);
+                    // }
 
                     // Publish the data.
                     geometry_pub.publish(data);
@@ -258,13 +277,53 @@ int main(int argc, char **argv)
             // Convert the referee data.
             roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
+            if (transform_field) {
+                rtt::transformRefereeData(data, transform_move, transform_rotate_right_angle);
+            }
+
+            if (normalize_field && !our_side_is_left) {
+                data = rtt::normalizeRefereeData(data);
+            }
+
             // Publish the data.
             refbox_pub.publish(data);
         }
 
+        // ---- Param updates ----
+
+        auto time_now = std::chrono::high_resolution_clock::now();
+        auto time_diff = time_now - last_parameter_update_time;
+
+        // Every second...
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(time_diff).count() > 1000) {
+            last_parameter_update_time = time_now;
+
+            update_parameters_from_ros();
+        }
+
+        // ---- /Param updates ----
+
         ros::spinOnce();
         loop_rate.sleep();
+
+        // auto timeNow = high_resolution_clock::now();
+        // auto timeDiff = timeNow - lastStatistics;
+
+        // // Every second...
+        // if (duration_cast<milliseconds>(timeDiff).count() > 1000) {
+            // std::cout << "Detectionpackets: " << detectionPackets << "\n";
+            // detectionPackets = 0;
+            // lastStatistics = timeNow;
+        // }
     }
+
+    // Destructors do not call close properly. Just to be sure we do.
+    vision_client.close();
+    refbox_client.close();
+
+    // This is needed because we use our own SIGINT handler!
+    // See crashtest.cpp for details
+    ros::shutdown();
 
     return 0;
 }
