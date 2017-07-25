@@ -56,21 +56,38 @@ void scaleArc(FieldCircularArc& arc, rtt::Vector2& scale) {
     arc.thickness *= scale.x;
 }
 
-void dropBallsOutsideTransform(DetectionFrame& frame, Vector2 const & field_size, double top, double right, double bottom, double left) {
-    auto & balls = frame.balls;
+void dropObjectsOutsideTransform(DetectionFrame& frame, Vector2 const & field_size, double top, double right, double bottom, double left) {
 
     left   =  - ( field_size.x / 2 ) + left;
     right  =    ( field_size.x / 2 ) - right;
     top    =    ( field_size.y / 2 ) - top;
     bottom =  - ( field_size.y / 2 ) + bottom;
 
-    balls.erase(std::remove_if(balls.begin(), balls.end(), [=](roboteam_msgs::DetectionBall const & ball) {
-        return ball.pos.x < left 
-            || ball.pos.x > right 
-            || ball.pos.y > top 
-            || ball.pos.y < bottom
+    auto inRect = [=](double x, double y) {
+        return x < left 
+            || x > right 
+            || y > top 
+            || y < bottom
             ;
+    } ;
+
+    auto & balls = frame.balls;
+
+    balls.erase(std::remove_if(balls.begin(), balls.end(), [&](roboteam_msgs::DetectionBall const & ball) {
+        return inRect(ball.pos.x, ball.pos.y);               
     }), balls.end());
+
+    auto & us = frame.us;
+
+    us.erase(std::remove_if(us.begin(), us.end(), [&](roboteam_msgs::DetectionRobot const & bot) {
+        return inRect(bot.pos.x, bot.pos.y);
+    }), us.end());
+    
+    auto & them = frame.them;
+
+    them.erase(std::remove_if(them.begin(), them.end(), [&](roboteam_msgs::DetectionRobot const & bot) {
+        return inRect(bot.pos.x, bot.pos.y);
+    }), them.end());
 }
 
 void transformDetectionFrame(DetectionFrame& frame, rtt::Vector2& move, bool& rotate) {

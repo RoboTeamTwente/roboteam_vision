@@ -146,7 +146,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
     roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
 
     if (transform_field) {
-        rtt::dropBallsOutsideTransform(
+        rtt::dropObjectsOutsideTransform(
                 frame, 
                 field_size,
                 transform_top, 
