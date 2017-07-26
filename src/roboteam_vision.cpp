@@ -188,8 +188,11 @@ int main(int argc, char **argv) {
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
 
-    RoboCupSSLClient vision_client = RoboCupSSLClient(10006, "224.5.23.2");
-    RoboCupSSLClient refbox_client = RoboCupSSLClient(10003, "224.5.23.1");;
+    RoboCupSSLClient vision_client = RoboCupSSLClient(10036, "224.5.23.2");
+    RoboCupSSLClient refbox_client = RoboCupSSLClient(10033, "224.5.23.1");
+
+    // RoboCupSSLClient vision_client = RoboCupSSLClient(10106, "224.0.0.0");
+    // RoboCupSSLClient refbox_client = RoboCupSSLClient(10103, "224.0.0.0");
 
     // Open the clients, blocking = false.
     vision_client.open(false);
@@ -257,10 +260,11 @@ int main(int argc, char **argv) {
 
                     field_size.x = data.field.field_length;
                     field_size.y = data.field.field_width;
-
+                    /*
                     if (transform_field) {
                         rtt::scaleGeometryData(data, transform_scale);
-                    }
+                    }*/
+                    std::cout << field_size.x << std::endl;
 
                     // Not sure if this is needed either - Bob
                     // if (normalize_field) {
