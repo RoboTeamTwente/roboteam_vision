@@ -45,6 +45,8 @@ float transform_right = 0;
 
 bool transform_rotate_right_angle = false;
 
+int const DEFAULT_VISION_PORT = 10006;
+int const DEFAULT_REFBOX_PORT = 10003;
 
 std::unique_ptr<RoboCupSSLClient> vision_client;
 std::unique_ptr<RoboCupSSLClient> refbox_client;
@@ -132,10 +134,10 @@ void update_parameters_from_ros() {
     if (ros::param::has("vision_source_port")) {
         int currentPort;
         ros::param::get("vision_source_port", currentPort);
-	if (lastKnownVisionPort && currentPort != *lastKnownVisionPort) {
+        if (lastKnownVisionPort && currentPort != *lastKnownVisionPort) {
             // Vision port changed; reset the client
             lastKnownVisionPort = currentPort;
-	    if (vision_client) {
+            if (vision_client) {
                 vision_client->close();
                 delete vision_client.release();
             }
@@ -144,14 +146,17 @@ void update_parameters_from_ros() {
         } else if (!lastKnownVisionPort) {
             lastKnownVisionPort = currentPort;
         }
+    } else {
+        ros::param::set("vision_source_port", DEFAULT_VISION_PORT);
     }
+
     if (ros::param::has("referee_source_port")) {
         int currentPort;
         ros::param::get("referee_source_port", currentPort);
-	if (lastKnownRefereePort && currentPort != *lastKnownRefereePort) {
+        if (lastKnownRefereePort && currentPort != *lastKnownRefereePort) {
             // Referee port changed; reset the client
             lastKnownRefereePort = currentPort;
-	    if (refbox_client) {
+            if (refbox_client) {
                 refbox_client->close();
                 delete refbox_client.release();
             }
@@ -160,6 +165,8 @@ void update_parameters_from_ros() {
         } else if (!lastKnownVisionPort) {
             lastKnownVisionPort = currentPort;
         }
+    } else {
+        ros::param::set("referee_source_port", DEFAULT_REFBOX_PORT);
     }
 }
 
@@ -228,8 +235,8 @@ int main(int argc, char **argv) {
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
 
-    vision_client = std::make_unique<RoboCupSSLClient>(10006, "224.5.23.2");
-    refbox_client = std::make_unique<RoboCupSSLClient>(10003, "224.5.23.1");
+    vision_client = std::make_unique<RoboCupSSLClient>(DEFAULT_VISION_PORT, "224.5.23.2");
+    refbox_client = std::make_unique<RoboCupSSLClient>(DEFAULT_REFBOX_PORT, "224.5.23.1");
 
     // Open the clients, blocking = false.
     vision_client->open(false);
