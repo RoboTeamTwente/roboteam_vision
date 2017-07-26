@@ -1,7 +1,7 @@
 #include <string>
 #include <signal.h>
 #include <chrono>
-
+#include <memory>
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
 #include "roboteam_msgs/DetectionFrame.h"
@@ -46,6 +46,13 @@ float transform_right = 0;
 bool transform_rotate_right_angle = false;
 
 
+std::unique_ptr<RoboCupSSLClient> vision_client;
+std::unique_ptr<RoboCupSSLClient> refbox_client;
+boost::optional<roboteam_msgs::RefereeData> latestReferee;
+boost::optional<roboteam_msgs::GeometryData> latestGeom;
+boost::optional<roboteam_msgs::DetectionFrame> latestFrame;
+
+boost::optional<int> lastKnownVisionPort, lastKnownRefereePort;
 
 void update_parameters_from_ros() {
     if (rtt::has_PARAM_NORMALIZE_FIELD()) {
@@ -96,7 +103,7 @@ void update_parameters_from_ros() {
     if (ros::param::has("transform_field/enabled")) {
         ros::param::get("transform_field/enabled", transform_field);
         ros::param::get("transform_field/rotate", transform_rotate_right_angle);
-
+	
         ros::param::get("transform_field/offset/top", transform_top);
         ros::param::get("transform_field/offset/bottom", transform_bottom);
         ros::param::get("transform_field/offset/left", transform_left);
@@ -121,6 +128,39 @@ void update_parameters_from_ros() {
     }
 
     // ---- /Transformation parameters ----
+
+    if (ros::param::has("vision_source_port")) {
+        int currentPort;
+        ros::param::get("vision_source_port", currentPort);
+	if (lastKnownVisionPort && currentPort != *lastKnownVisionPort) {
+            // Vision port changed; reset the client
+            lastKnownVisionPort = currentPort;
+	    if (vision_client) {
+                vision_client->close();
+                delete vision_client.release();
+            }
+            vision_client = std::make_unique<RoboCupSSLClient>(currentPort, "224.5.23.2");
+            vision_client->open(false);
+        } else if (!lastKnownVisionPort) {
+            lastKnownVisionPort = currentPort;
+        }
+    }
+    if (ros::param::has("referee_source_port")) {
+        int currentPort;
+        ros::param::get("referee_source_port", currentPort);
+	if (lastKnownRefereePort && currentPort != *lastKnownRefereePort) {
+            // Referee port changed; reset the client
+            lastKnownRefereePort = currentPort;
+	    if (refbox_client) {
+                refbox_client->close();
+                delete refbox_client.release();
+            }
+            refbox_client = std::make_unique<RoboCupSSLClient>(currentPort, "224.5.23.1");
+            refbox_client->open(false);
+        } else if (!lastKnownVisionPort) {
+            lastKnownVisionPort = currentPort;
+        }
+    }
 }
 
 
@@ -188,12 +228,12 @@ int main(int argc, char **argv) {
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
 
-    RoboCupSSLClient vision_client = RoboCupSSLClient(10006, "224.5.23.2");
-    RoboCupSSLClient refbox_client = RoboCupSSLClient(10003, "224.5.23.1");;
+    vision_client = std::make_unique<RoboCupSSLClient>(10006, "224.5.23.2");
+    refbox_client = std::make_unique<RoboCupSSLClient>(10003, "224.5.23.1");
 
     // Open the clients, blocking = false.
-    vision_client.open(false);
-    refbox_client.open(false);
+    vision_client->open(false);
+    refbox_client->open(false);
 
     std::chrono::high_resolution_clock::time_point last_parameter_update_time = std::chrono::high_resolution_clock::now();
 
@@ -210,10 +250,11 @@ int main(int argc, char **argv) {
     // auto lastStatistics = std::chrono::high_resolution_clock::now();
 
     while (ros::ok() && !shuttingDown) {
+	if (vision_client) {
         if (use_legacy_packets) {
 
             // Receive legacy packets.
-            while (vision_client.receive(vision_packet_legacy)) {
+            while (vision_client->receive(vision_packet_legacy)) {
 
                 // Detection frame.
                 if (vision_packet_legacy.has_detection()) {
@@ -244,7 +285,7 @@ int main(int argc, char **argv) {
         } else {
 
             // Receive current version packets.
-            while (vision_client.receive(vision_packet)) {
+            while (vision_client->receive(vision_packet)) {
 
                 // Detection frame.
                 if (vision_packet.has_detection()) {
@@ -272,8 +313,18 @@ int main(int argc, char **argv) {
                 }
             }
         }
+	} else {
+	    ROS_ERROR("roboteam_vision: Vision disconnected!");
+	    if (latestFrame) {
+                detection_pub.publish(*latestFrame);
+            }
+            if (latestGeom) {
+                geometry_pub.publish(*latestGeom);
+            }
+	}
 
-        while (refbox_client.receive(refbox_packet)) {
+	if (refbox_client) {
+        while (refbox_client->receive(refbox_packet)) {
             // Convert the referee data.
             roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
@@ -288,6 +339,12 @@ int main(int argc, char **argv) {
             // Publish the data.
             refbox_pub.publish(data);
         }
+	} else {
+	    ROS_WARN("roboteam_vision: Referee Disconnected!");
+	    if (latestReferee) {
+		refbox_pub.publish(*latestReferee);
+            }
+	}
 
         // ---- Param updates ----
 
@@ -318,8 +375,8 @@ int main(int argc, char **argv) {
     }
 
     // Destructors do not call close properly. Just to be sure we do.
-    vision_client.close();
-    refbox_client.close();
+    vision_client->close();
+    refbox_client->close();
 
     // This is needed because we use our own SIGINT handler!
     // See crashtest.cpp for details
