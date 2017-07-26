@@ -20,7 +20,7 @@ using namespace roboteam_msgs;
  * around (0,0)
  */
 
-void dropBallsOutsideTransform(DetectionFrame& frame, Vector2 const & field_size, double top, double right, double bottom, double left);
+void dropObjectsOutsideTransform(DetectionFrame& frame, Vector2 const & field_size, double top, double right, double bottom, double left);
 
 void scaleGeometryData(GeometryData& data, rtt::Vector2 scale);
 
