@@ -22,8 +22,8 @@
 #include "roboteam_vision/convert/convert_referee.h"
 #include "roboteam_vision/transform.h"
 
-constexpr unsigned DEFAULT_VISION_PORT = 10006;
-constexpr unsigned DEFAULT_REFEREE_PORT = 10003;
+constexpr int DEFAULT_VISION_PORT = 10006;
+constexpr int DEFAULT_REFEREE_PORT = 10003;
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
@@ -46,7 +46,6 @@ float transform_left = 0;
 float transform_right = 0;
 
 bool transform_rotate_right_angle = false;
-
 
 std::unique_ptr<RoboCupSSLClient> vision_client;
 std::unique_ptr<RoboCupSSLClient> refbox_client;
@@ -134,10 +133,10 @@ void update_parameters_from_ros() {
     if (ros::param::has("vision_source_port")) {
         int currentPort;
         ros::param::get("vision_source_port", currentPort);
-	if (lastKnownVisionPort && currentPort != *lastKnownVisionPort) {
+        if (lastKnownVisionPort && currentPort != *lastKnownVisionPort) {
             // Vision port changed; reset the client
             lastKnownVisionPort = currentPort;
-	    if (vision_client) {
+            if (vision_client) {
                 vision_client->close();
                 delete vision_client.release();
             }
@@ -146,14 +145,17 @@ void update_parameters_from_ros() {
         } else if (!lastKnownVisionPort) {
             lastKnownVisionPort = currentPort;
         }
+    } else {
+        ros::param::set("vision_source_port", DEFAULT_VISION_PORT);
     }
+
     if (ros::param::has("referee_source_port")) {
         int currentPort;
         ros::param::get("referee_source_port", currentPort);
-	if (lastKnownRefereePort && currentPort != *lastKnownRefereePort) {
+        if (lastKnownRefereePort && currentPort != *lastKnownRefereePort) {
             // Referee port changed; reset the client
             lastKnownRefereePort = currentPort;
-	    if (refbox_client) {
+            if (refbox_client) {
                 refbox_client->close();
                 delete refbox_client.release();
             }
@@ -162,6 +164,8 @@ void update_parameters_from_ros() {
         } else if (!lastKnownRefereePort) {
             lastKnownRefereePort = currentPort;
         }
+    } else {
+        ros::param::set("referee_source_port", DEFAULT_REFEREE_PORT);
     }
 }
 
@@ -236,10 +240,13 @@ int main(int argc, char **argv) {
 
     int initialRefPort = DEFAULT_REFEREE_PORT;
     if (ros::param::has("referee_source_port")) {
-        ros::param::get("vision_source_port", initialRefPort);
+        ros::param::get("referee_source_port", initialRefPort);
     }
+    
     vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.5.23.2");
     refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.5.23.1");
+
+    ROS_INFO("Starting vision client on port %d and refbox client on port %d.", initialVisionPort, initialRefPort);
 
     // Open the clients, blocking = false.
     vision_client->open(false);
