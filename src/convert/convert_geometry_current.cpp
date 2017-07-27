@@ -55,12 +55,14 @@ namespace rtt {
      */
     roboteam_msgs::GeometryFieldSize convert_geometry_field_size(SSL_GeometryFieldSize protoSize) {
         roboteam_msgs::GeometryFieldSize rosSize;
-
+        std::cout << protoSize.field_length() << std::endl;
         rosSize.field_length = mm_to_m(protoSize.field_length());
         rosSize.field_width = mm_to_m(protoSize.field_width());
         rosSize.goal_width = mm_to_m(protoSize.goal_width());
         rosSize.goal_depth = mm_to_m(protoSize.goal_depth());
         rosSize.boundary_width = mm_to_m(protoSize.boundary_width());
+        
+
 
         for (int i = 0; i < protoSize.field_lines_size(); ++i) {
             SSL_FieldLineSegment protoLine = protoSize.field_lines(i);
