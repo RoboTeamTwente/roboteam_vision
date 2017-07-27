@@ -22,8 +22,8 @@
 #include "roboteam_vision/convert/convert_referee.h"
 #include "roboteam_vision/transform.h"
 
-constexpr int DEFAULT_VISION_PORT = 10006;
-constexpr int DEFAULT_REFEREE_PORT = 10003;
+constexpr int DEFAULT_VISION_PORT = 10036;
+constexpr int DEFAULT_REFEREE_PORT = 10033;
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
@@ -245,6 +245,9 @@ int main(int argc, char **argv) {
     
     vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.5.23.2");
     refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.5.23.1");
+
+    // vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.0.0.0");
+    // refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.0.0.0");
 
     ROS_INFO("Starting vision client on port %d and refbox client on port %d.", initialVisionPort, initialRefPort);
 
