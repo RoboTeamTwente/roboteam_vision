@@ -318,10 +318,10 @@ int main(int argc, char **argv) {
 
                     field_size.x = data.field.field_length;
                     field_size.y = data.field.field_width;
-                    /*
+                    
                     if (transform_field) {
                         rtt::scaleGeometryData(data, transform_scale);
-                    }*/
+                    }
                     // std::cout << field_size.x << std::endl;
 
                     // Not sure if this is needed either - Bob
