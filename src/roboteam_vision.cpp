@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
                     if (transform_field) {
                         rtt::scaleGeometryData(data, transform_scale);
                     }*/
-                    std::cout << field_size.x << std::endl;
+                    // std::cout << field_size.x << std::endl;
 
                     // Not sure if this is needed either - Bob
                     // if (normalize_field) {
