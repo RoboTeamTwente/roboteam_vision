@@ -246,8 +246,8 @@ int main(int argc, char **argv) {
     vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.5.23.2");
     refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.5.23.1");
 
-    // vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.0.0.0");
-    // refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.0.0.0");
+    // vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.0.0.1");
+    // refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.0.1.100");
 
     ROS_INFO("Starting vision client on port %d and refbox client on port %d.", initialVisionPort, initialRefPort);
 
