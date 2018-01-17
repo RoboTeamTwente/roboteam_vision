@@ -33,7 +33,7 @@ bool use_legacy_packets = false;
 bool our_side_is_left = true;
 bool normalize_field = true;
 
-// Field size used for calculating the transormation scale.
+// Field size used for calculating the transformation scale.
 // Is updated when a GeometryData packet arrives.
 rtt::Vector2 field_size = rtt::Vector2(6, 9);
 
@@ -56,6 +56,7 @@ boost::optional<roboteam_msgs::DetectionFrame> latestFrame;
 boost::optional<int> lastKnownVisionPort, lastKnownRefereePort;
 
 void update_parameters_from_ros() {
+
     if (rtt::has_PARAM_NORMALIZE_FIELD()) {
         rtt::get_PARAM_NORMALIZE_FIELD(normalize_field);
     } else {
@@ -134,6 +135,7 @@ void update_parameters_from_ros() {
         int currentPort;
         ros::param::get("vision_source_port", currentPort);
         if (lastKnownVisionPort && currentPort != *lastKnownVisionPort) {
+            ROS_INFO_STREAM("[Vision] vision port changed to " << currentPort);
             // Vision port changed; reset the client
             lastKnownVisionPort = currentPort;
             if (vision_client) {
@@ -153,6 +155,7 @@ void update_parameters_from_ros() {
         int currentPort;
         ros::param::get("referee_source_port", currentPort);
         if (lastKnownRefereePort && currentPort != *lastKnownRefereePort) {
+            ROS_INFO_STREAM("[Vision] referee port changed to " << currentPort);
             // Referee port changed; reset the client
             lastKnownRefereePort = currentPort;
             if (refbox_client) {
@@ -169,15 +172,13 @@ void update_parameters_from_ros() {
     }
 }
 
-
-
 namespace {
 
-bool shuttingDown = false;
+    bool shuttingDown = false;
 
-void sigIntHandler(int) {
-    shuttingDown = true;
-}
+    void sigIntHandler(int) {
+        shuttingDown = true;
+    }
 
 } // anonymous namespace
 
@@ -223,7 +224,9 @@ int main(int argc, char **argv) {
     ros::NodeHandle n;
 
     // Run at 200 hz.
-    ros::Rate loop_rate(80);
+    int rate = 80;
+    ros::Rate loop_rate(rate);
+    ROS_INFO_STREAM("[Vision] Running at " << 80 << " Hz");
 
     // Create the publishers.
     // The `true` means that the messages will be latched.
@@ -232,6 +235,8 @@ int main(int argc, char **argv) {
     ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000, true);
     ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
+
+    ROS_INFO("[Vision] Publishing to 'vision_detection', 'vision_geometry', 'vision_refbox'");
 
     int initialVisionPort = DEFAULT_VISION_PORT;
     if (ros::param::has("vision_source_port")) {
