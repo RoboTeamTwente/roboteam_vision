@@ -32,6 +32,12 @@ namespace rtt {
         std::make_pair("LeftFieldRightPenaltyArc", "bottom_left_penalty_arc"),
         std::make_pair("RightFieldLeftPenaltyArc", "top_right_penalty_arc"),
         std::make_pair("RightFieldRightPenaltyArc", "bottom_right_penalty_arc"),
+        
+        std::make_pair("LeftFieldLeftPenaltyStretch", "top_left_penalty_stretch"),
+        std::make_pair("LeftFieldRightPenaltyStretch", "bottom_left_penalty_stretch"),
+        std::make_pair("RightFieldLeftPenaltyStretch", "bottom_right_penalty_stretch"),
+        std::make_pair("RightFieldRightPenaltyStretch", "top_right_penalty_stretch"),
+        
         std::make_pair("CenterCircle", "center_circle"),
     };
 

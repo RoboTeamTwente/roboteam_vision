@@ -27,6 +27,13 @@ void scaleGeometryData(GeometryData& data, rtt::Vector2 scale) {
     scaleArc(field.bottom_left_penalty_arc, scale);
     scaleArc(field.top_right_penalty_arc, scale);
     scaleArc(field.bottom_right_penalty_arc, scale);
+
+    // add rectangle box lines
+    scaleLine(field.top_left_penalty_stretch, scale);
+    scaleLine(field.bottom_left_penalty_stretch, scale);
+    scaleLine(field.top_right_penalty_stretch, scale);
+    scaleLine(field.bottom_right_penalty_stretch, scale);
+
     scaleArc(field.center_circle, scale);
 
     for (auto& line : field.field_lines) {

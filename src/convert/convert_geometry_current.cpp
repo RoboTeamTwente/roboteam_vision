@@ -86,6 +86,16 @@ namespace rtt {
                 rosSize.left_penalty_line = rosLine;
             } else if (rosLine.name == "right_penalty_line") {
                 rosSize.right_penalty_line = rosLine;
+            } 
+            // adding rectangle box lines
+            else if (rosLine.name == "top_left_penalty_stretch") {
+                rosSize.top_left_penalty_stretch = rosLine;
+            } else if (rosLine.name == "bottom_left_penalty_stretch") {
+                rosSize.bottom_left_penalty_stretch = rosLine;
+            } else if (rosLine.name == "top_right_penalty_stretch") {
+                rosSize.top_right_penalty_stretch = rosLine;
+            } else if (rosLine.name == "bottom_right_penalty_stretch") {
+                rosSize.bottom_right_penalty_stretch = rosLine;
             }
         }
 
