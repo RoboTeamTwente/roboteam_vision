@@ -22,8 +22,14 @@
 #include "roboteam_vision/convert/convert_referee.h"
 #include "roboteam_vision/transform.h"
 
-constexpr int DEFAULT_VISION_PORT = 10036;
-constexpr int DEFAULT_REFEREE_PORT = 10033;
+constexpr int DEFAULT_VISION_PORT = 11036;
+constexpr int DEFAULT_REFEREE_PORT = 10003;
+
+const std::string VISION_SOURCE_IP = "127.0.0.1";
+const std::string REFEREE_SOURCE_IP = "127.0.0.1";
+
+const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
+const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
@@ -142,7 +148,7 @@ void update_parameters_from_ros() {
                 vision_client->close();
                 delete vision_client.release();
             }
-            vision_client = std::make_unique<RoboCupSSLClient>(currentPort, "224.5.23.2");
+            vision_client = std::make_unique<RoboCupSSLClient>(currentPort, VISION_SOURCE_IP);
             vision_client->open(false);
         } else if (!lastKnownVisionPort) {
             lastKnownVisionPort = currentPort;
@@ -223,10 +229,10 @@ int main(int argc, char **argv) {
     signal(SIGINT, sigIntHandler);
     ros::NodeHandle n;
 
-    // Run at 200 hz.
+    // Run at 80 hz.
     int rate = 80;
     ros::Rate loop_rate(rate);
-    ROS_INFO_STREAM("[Vision] Running at " << 80 << " Hz");
+    ROS_INFO_STREAM("Running at " << 80 << " Hz");
 
     // Create the publishers.
     // The `true` means that the messages will be latched.
@@ -236,25 +242,28 @@ int main(int argc, char **argv) {
     ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
-    ROS_INFO("[Vision] Publishing to 'vision_detection', 'vision_geometry', 'vision_refbox'");
+    ROS_INFO("Publishing to 'vision_detection', 'vision_geometry', 'vision_refbox'");
 
     int initialVisionPort = DEFAULT_VISION_PORT;
     if (ros::param::has("vision_source_port")) {
         ros::param::get("vision_source_port", initialVisionPort);
     }
 
-    int initialRefPort = DEFAULT_REFEREE_PORT;
+    int initialRefereePort = DEFAULT_REFEREE_PORT;
     if (ros::param::has("referee_source_port")) {
-        ros::param::get("referee_source_port", initialRefPort);
+        ros::param::get("referee_source_port", initialRefereePort);
     }
     
-    vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.5.23.2");
-    refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.5.23.1");
+    vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, VISION_SOURCE_IP);
+    refbox_client = std::make_unique<RoboCupSSLClient>(initialRefereePort, REFEREE_SOURCE_IP);
 
-    // vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, "224.0.0.1");
-    // refbox_client = std::make_unique<RoboCupSSLClient>(initialRefPort, "224.0.1.100");
+	ROS_INFO_STREAM("Vision  : " << VISION_SOURCE_IP  << ":" << initialVisionPort);
+	ROS_INFO_STREAM("Referee : " << REFEREE_SOURCE_IP << ":" << initialRefereePort);
 
-    ROS_INFO("Starting vision client on port %d and refbox client on port %d.", initialVisionPort, initialRefPort);
+    if(VISION_SOURCE_IP != SSL_VISION_SOURCE_IP)
+        ROS_WARN_STREAM("Watch out! Current VISION_SOURCE_IP will not work for the competition! Remember to set it to " << SSL_VISION_SOURCE_IP);
+    if(REFEREE_SOURCE_IP != SSL_REFEREE_SOURCE_IP)
+        ROS_WARN_STREAM("Watch out! Current REFEREE_SOURCE_IP will not work for the competition! Remember to set it to " << SSL_REFEREE_SOURCE_IP);
 
     // Open the clients, blocking = false.
     vision_client->open(false);
@@ -264,7 +273,7 @@ int main(int argc, char **argv) {
 
     update_parameters_from_ros();
 
-    ROS_INFO("Vision ready.");
+    ROS_INFO("Vision ready");
 
     SSL_WrapperPacket vision_packet;
     RoboCup2014Legacy::Wrapper::SSL_WrapperPacket vision_packet_legacy;
