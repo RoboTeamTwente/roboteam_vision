@@ -22,14 +22,17 @@
 #include "roboteam_vision/convert/convert_referee.h"
 #include "roboteam_vision/transform.h"
 
-constexpr int DEFAULT_VISION_PORT = 11036;
+constexpr int DEFAULT_VISION_PORT = 10006;
 constexpr int DEFAULT_REFEREE_PORT = 10003;
-
-const std::string VISION_SOURCE_IP = "127.0.0.1";
-const std::string REFEREE_SOURCE_IP = "127.0.0.1";
 
 const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
 const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
+
+//const std::string VISION_SOURCE_IP = "127.0.0.1";
+//const std::string REFEREE_SOURCE_IP = "127.0.0.1";
+
+const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
+const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
