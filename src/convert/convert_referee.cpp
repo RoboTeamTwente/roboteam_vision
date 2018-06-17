@@ -1,6 +1,4 @@
-
 #include "roboteam_vision/convert/convert_referee.h"
-
 #include "roboteam_vision/convert/convert_units.h"
 
 
@@ -32,6 +30,8 @@ namespace rtt {
         rosRef.designated_position.y = mm_to_m(protoRef.designated_position().y());
 
         rosRef.blueTeamOnPositiveHalf = protoRef.blueteamonpositivehalf();
+
+        rosRef.gameEvent = convert_game_event(protoRef.gameevent());
 
         return rosRef;
     }
@@ -235,6 +235,20 @@ namespace rtt {
         rosInfo.goalie = protoInfo.goalie();
 
         return rosInfo;
+    }
+
+    /**
+     * Converts protoBuf GameEvent to the ROS version.
+     */
+    roboteam_msgs::GameEvent convert_game_event(SSL_Referee_Game_Event protoGameEvent){
+        roboteam_msgs::GameEvent gameEvent;
+
+        gameEvent.event = protoGameEvent.gameeventtype();
+        gameEvent.message = protoGameEvent.message();
+        gameEvent.originator.botId = protoGameEvent.originator().botid();
+        gameEvent.originator.team = protoGameEvent.originator().team();
+
+        return gameEvent;
     }
 
 }
