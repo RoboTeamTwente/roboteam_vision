@@ -28,11 +28,14 @@ constexpr int DEFAULT_REFEREE_PORT = 10003;
 const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
 const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
 
-//const std::string VISION_SOURCE_IP = "127.0.0.1";
-//const std::string REFEREE_SOURCE_IP = "127.0.0.1";
+const std::string VISION_SOURCE_IP = "127.0.0.1";
+const std::string REFEREE_SOURCE_IP = "127.0.0.1";
 
-const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
-const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
+// const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
+// const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
+
+// Our name as specified by ssl-refbox : https://github.com/RoboCup-SSL/ssl-refbox/blob/master/referee.conf
+const std::string ROBOTEAM_TWENTE = "RoboTeam Twente";
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
@@ -72,38 +75,53 @@ void update_parameters_from_ros() {
         rtt::set_PARAM_NORMALIZE_FIELD(true);
     }
 
+    // Check the ROS parameters for which side we are on
     if (rtt::has_PARAM_OUR_SIDE()) {
         std::string our_side;
         rtt::get_PARAM_OUR_SIDE(our_side);
 
         if (our_side == "left") {
+            if(!our_side_is_left) ROS_INFO_STREAM("Changed side to left");
             our_side_is_left = true;
         } else if (our_side == "right") {
+            if(our_side_is_left) ROS_INFO_STREAM("Changed side to right");
             our_side_is_left = false;
         } else {
+            ROS_WARN_STREAM("Parameter for side invalid : '" << our_side << "' ! Defaulting to left");
             rtt::set_PARAM_OUR_SIDE("left");
         }
     } else {
+        ROS_WARN_STREAM("Parameter for side not set! Defaulting to left");
         rtt::set_PARAM_OUR_SIDE("left");
     }
 
+    // Check the ROS parameters for which color we are
     if (rtt::has_PARAM_OUR_COLOR()) {
         std::string our_color;
         rtt::get_PARAM_OUR_COLOR(our_color);
 
         if (our_color == "yellow") {
+            if(!us_is_yellow) ROS_INFO_STREAM("Changed color to yellow");
             us_is_yellow = true;
         } else if (our_color == "blue") {
+            if(us_is_yellow) ROS_INFO_STREAM("Changed color to blue");
             us_is_yellow = false;
         } else {
+            ROS_WARN_STREAM("Parameter for color invalid : '" << our_color << "' ! Defaulting to yellow");
             rtt::set_PARAM_OUR_COLOR("yellow");
         }
     } else {
+        ROS_WARN_STREAM("Parameter for side not set! Defaulting to yellow");
         rtt::set_PARAM_OUR_COLOR("yellow");
     }
 
+    // Check if we should use legacy packets
     if (ros::param::has("use_legacy_packets")) {
-        ros::param::get("use_legacy_packets", use_legacy_packets);
+        bool _use_legacy_packets;
+        ros::param::get("use_legacy_packets", _use_legacy_packets);
+        if(_use_legacy_packets && !use_legacy_packets)
+            ROS_INFO_STREAM("Switching to using legacy packets");
+        use_legacy_packets = _use_legacy_packets;
     } else {
         ros::param::set("use_legacy_packets", false);
     }
@@ -140,11 +158,12 @@ void update_parameters_from_ros() {
 
     // ---- /Transformation parameters ----
 
+    // Vision
     if (ros::param::has("vision_source_port")) {
         int currentPort;
         ros::param::get("vision_source_port", currentPort);
         if (lastKnownVisionPort && currentPort != *lastKnownVisionPort) {
-            ROS_INFO_STREAM("[Vision] vision port changed to " << currentPort);
+            ROS_INFO_STREAM("vision port changed to " << currentPort);
             // Vision port changed; reset the client
             lastKnownVisionPort = currentPort;
             if (vision_client) {
@@ -160,11 +179,12 @@ void update_parameters_from_ros() {
         ros::param::set("vision_source_port", DEFAULT_VISION_PORT);
     }
 
+    // Referee
     if (ros::param::has("referee_source_port")) {
         int currentPort;
         ros::param::get("referee_source_port", currentPort);
         if (lastKnownRefereePort && currentPort != *lastKnownRefereePort) {
-            ROS_INFO_STREAM("[Vision] referee port changed to " << currentPort);
+            ROS_INFO_STREAM("referee port changed to " << currentPort);
             // Referee port changed; reset the client
             lastKnownRefereePort = currentPort;
             if (refbox_client) {
@@ -203,7 +223,7 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
 
     if (transform_field) {
         rtt::dropObjectsOutsideTransform(
-                frame, 
+                frame,
                 field_size,
                 transform_top, 
                 transform_right,
@@ -227,7 +247,7 @@ int main(int argc, char **argv) {
     std::vector<std::string> args(argv, argv + argc);
 
     // Init ros.
-    ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // What?
+    ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // NoSigintHandler gives the ability to override ROS sigint handler
     // Flower power!
     signal(SIGINT, sigIntHandler);
     ros::NodeHandle n;
@@ -235,7 +255,7 @@ int main(int argc, char **argv) {
     // Run at 80 hz.
     int rate = 80;
     ros::Rate loop_rate(rate);
-    ROS_INFO_STREAM("Running at " << 80 << " Hz");
+    ROS_INFO_STREAM("Running at " << rate << " Hz");
 
     // Create the publishers.
     // The `true` means that the messages will be latched.
@@ -287,39 +307,41 @@ int main(int argc, char **argv) {
     // auto lastStatistics = std::chrono::high_resolution_clock::now();
 
     while (ros::ok() && !shuttingDown) {
+    // If the vision client is running
 	if (vision_client) {
-        if (use_legacy_packets) {
 
-            // Receive legacy packets.
-            while (vision_client->receive(vision_packet_legacy)) {
-
-                // Detection frame.
-                if (vision_packet_legacy.has_detection()) {
-                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, normalize_field);
-                }
-
-                if (vision_packet_legacy.has_geometry()) {
-                    // Convert the geometry frame.
-                    roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
-
-                    field_size.x = data.field.field_length;
-                    field_size.y = data.field.field_width;
-
-                    if (transform_field) {
-                        rtt::scaleGeometryData(data, transform_scale);
-                    }
-
-                    // Not sure if this is needed - Bob
-                    // if (normalize_field) {
-                        // data = rtt::normalizeGeometryData(data);
-                    // }
-
-                    // Publish the data.
-                    geometry_pub.publish(data);
-                }
-            }
-
-        } else {
+//        if (use_legacy_packets) {
+//
+//            // Receive legacy packets.
+//            while (vision_client->receive(vision_packet_legacy)) {
+//
+//                // Detection frame.
+//                if (vision_packet_legacy.has_detection()) {
+//                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, normalize_field);
+//                }
+//
+//                if (vision_packet_legacy.has_geometry()) {
+//                    // Convert the geometry frame.
+//                    roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
+//
+//                    field_size.x = data.field.field_length;
+//                    field_size.y = data.field.field_width;
+//
+//                    if (transform_field) {
+//                        rtt::scaleGeometryData(data, transform_scale);
+//                    }
+//
+//                    // Not sure if this is needed - Bob
+//                    // if (normalize_field) {
+//                        // data = rtt::normalizeGeometryData(data);
+//                    // }
+//
+//                    // Publish the data.
+//                    geometry_pub.publish(data);
+//                }
+//            }
+//
+//        } else {
 
             // Receive current version packets.
             while (vision_client->receive(vision_packet)) {
@@ -339,18 +361,12 @@ int main(int argc, char **argv) {
                     if (transform_field) {
                         rtt::scaleGeometryData(data, transform_scale);
                     }
-                    // std::cout << field_size.x << std::endl;
-
-                    // Not sure if this is needed either - Bob
-                    // if (normalize_field) {
-                        // data = rtt::normalizeGeometryData(data);
-                    // }
 
                     // Publish the data.
                     geometry_pub.publish(data);
                 }
             }
-        }
+//        }
 	} else {
 	    ROS_ERROR("roboteam_vision: Vision disconnected!");
 	    if (latestFrame) {
@@ -361,10 +377,40 @@ int main(int argc, char **argv) {
             }
 	}
 
+    // If the referee client is running
 	if (refbox_client) {
         while (refbox_client->receive(refbox_packet)) {
+            bool shouldUpdateParameters = false;
+
             // Convert the referee data.
             roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
+
+            // === Check if our color has changed === //
+            // If the name of our team is not "RoboTeam Twente", but the opponents team is, we are set to the wrong color
+            if(data.us.name != ROBOTEAM_TWENTE && data.them.name == ROBOTEAM_TWENTE){
+                ROS_WARN_STREAM("The name of our team is not " << ROBOTEAM_TWENTE << " ! The name of their team is! Switching colors..");
+                // If we are yellow, switch to blue. If we are blue, switch to yellow.
+                rtt::set_PARAM_OUR_COLOR(us_is_yellow ? "blue" : "yellow");
+                shouldUpdateParameters = true;
+            }else
+            // If none of the teams are named "RoboTeam Twente"
+            if(data.us.name != ROBOTEAM_TWENTE && data.them.name != ROBOTEAM_TWENTE){
+                ROS_DEBUG_STREAM_THROTTLE(1, "None of the teams are named " << ROBOTEAM_TWENTE);
+            }
+
+            // === Check if our side has changed === //
+            // blueTeamOnPositiveHalf=true means "the blue team will have it's goal on the positive x-axis of the ssl-vision coordinate system" : https://github.com/RoboCup-SSL/ssl-refbox/blob/master/referee.proto
+            if(our_side_is_left != (us_is_yellow ^ data.blueTeamOnPositiveHalf)){
+                ROS_WARN("We are playing on the wrong side! Switching sides..");
+                // If we are left, switch to right. If we are right, switch to left
+                rtt::set_PARAM_OUR_SIDE(our_side_is_left ? "right" : "left");
+                shouldUpdateParameters = true;
+            }
+
+            // Update the ros_parameters if we changed color or sides
+            if(shouldUpdateParameters) {
+                update_parameters_from_ros();
+            }
 
             if (transform_field) {
                 rtt::transformRefereeData(data, transform_move, transform_rotate_right_angle);
@@ -378,10 +424,10 @@ int main(int argc, char **argv) {
             refbox_pub.publish(data);
         }
 	} else {
-	    ROS_WARN("roboteam_vision: Referee Disconnected!");
+	    ROS_WARN("roboteam_vision: Referee Disconnected! Publishing last known referee data..");
 	    if (latestReferee) {
-		refbox_pub.publish(*latestReferee);
-            }
+		    refbox_pub.publish(*latestReferee);
+        }
 	}
 
         // ---- Param updates ----

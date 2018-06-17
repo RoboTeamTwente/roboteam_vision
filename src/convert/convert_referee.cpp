@@ -31,6 +31,8 @@ namespace rtt {
         rosRef.designated_position.x = mm_to_m(protoRef.designated_position().x());
         rosRef.designated_position.y = mm_to_m(protoRef.designated_position().y());
 
+        rosRef.blueTeamOnPositiveHalf = protoRef.blueteamonpositivehalf();
+
         return rosRef;
     }
 
