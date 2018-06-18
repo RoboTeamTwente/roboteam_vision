@@ -17,6 +17,7 @@
 #include "roboteam_utils/constants.h"
 #include "roboteam_utils/Vector2.h"
 
+#include "roboteam_vision/roboteam_vision.h"
 #include "roboteam_vision/convert/convert_detection.h"
 #include "roboteam_vision/convert/convert_geometry_current.h"
 #include "roboteam_vision/convert/convert_geometry_legacy.h"
