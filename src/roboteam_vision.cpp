@@ -29,8 +29,10 @@ constexpr int DEFAULT_REFEREE_PORT = 10003;
 const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
 const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
 
-const std::string VISION_SOURCE_IP = "127.0.0.1";
-const std::string REFEREE_SOURCE_IP = "127.0.0.1";
+const std::string LOCAL_SOURCE_IP = "127.0.0.1";
+
+std::string VISION_SOURCE_IP  = LOCAL_SOURCE_IP;
+std::string REFEREE_SOURCE_IP = LOCAL_SOURCE_IP;
 
 // const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
 // const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
@@ -48,7 +50,7 @@ bool normalize_field = true;
 
 // Field size used for calculating the transformation scale.
 // Is updated when a GeometryData packet arrives.
-rtt::Vector2 field_size = rtt::Vector2(6, 9);
+rtt::Vector2 field_size = rtt::Vector2(9, 12);  // Does this thing even do anything?
 
 bool transform_field = false;
 rtt::Vector2 transform_move = rtt::Vector2(0, 0);
@@ -277,7 +279,28 @@ int main(int argc, char **argv) {
     if (ros::param::has("referee_source_port")) {
         ros::param::get("referee_source_port", initialRefereePort);
     }
-    
+
+    // If Serial, assume real game. If Grsim, assume local testing
+    std::string robot_output_target = "grsim";
+    if(ros::param::has("robot_output_target")){
+        ros::param::get("robot_output_target", robot_output_target);
+    }else{
+        ROS_WARN("parameter 'robot_output_target' not specified. Assuming grsim");
+    }
+
+    // Set ip addresses accordingly
+    if(robot_output_target == "serial"){
+        VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
+        REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
+    }else
+    if(robot_output_target == "grsim"){
+        VISION_SOURCE_IP = LOCAL_SOURCE_IP;
+        REFEREE_SOURCE_IP = LOCAL_SOURCE_IP;
+    }else{
+        ROS_WARN_STREAM("Parameter 'robot_output_target' has unknown value '" << robot_output_target << "'! Assuming grsim");
+    }
+    ROS_INFO_STREAM("Parameters set for '" << robot_output_target << "'");
+
     vision_client = std::make_unique<RoboCupSSLClient>(initialVisionPort, VISION_SOURCE_IP);
     refbox_client = std::make_unique<RoboCupSSLClient>(initialRefereePort, REFEREE_SOURCE_IP);
 
@@ -386,8 +409,9 @@ int main(int argc, char **argv) {
                 // Convert the referee data.
                 roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
+                // TODO print description of game events as described in https://github.com/RoboCup-SSL/ssl-refbox/blob/master/game_event.proto
                 if(data.gameEvent.event != 0){
-                    ROS_INFO_STREAM("Game event occured! event=" << data.gameEvent.event << ", message='" << data.gameEvent.message << "', team:bot=" << data.gameEvent.originator.team << ":" << data.gameEvent.originator.botId);
+//                    ROS_INFO_STREAM("Game event occured! event=" << data.gameEvent.event << ", message='" << data.gameEvent.message << "', team:bot=" << data.gameEvent.originator.team << ":" << data.gameEvent.originator.botId);
                 }
 
                 // === Check if our color has changed === //
