@@ -17,6 +17,7 @@
 #include "roboteam_utils/constants.h"
 #include "roboteam_utils/Vector2.h"
 
+#include "roboteam_vision/roboteam_vision.h"
 #include "roboteam_vision/convert/convert_detection.h"
 #include "roboteam_vision/convert/convert_geometry_current.h"
 #include "roboteam_vision/convert/convert_geometry_legacy.h"
@@ -224,13 +225,13 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
 
     if (transform_field) {
         rtt::dropObjectsOutsideTransform(
-                frame,
-                field_size,
-                transform_top, 
-                transform_right,
-                transform_bottom,
-                transform_left
-                );
+            frame,
+            field_size,
+            transform_top,
+            transform_right,
+            transform_bottom,
+            transform_left
+        );
 
         rtt::transformDetectionFrame(frame, transform_move, transform_rotate_right_angle);
     }
@@ -247,7 +248,7 @@ int main(int argc, char **argv) {
 
     std::vector<std::string> args(argv, argv + argc);
 
-    // Init ros.
+    // Init ros
     ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // NoSigintHandler gives the ability to override ROS sigint handler
     // Flower power!
     signal(SIGINT, sigIntHandler);
@@ -314,65 +315,30 @@ int main(int argc, char **argv) {
     while (ros::ok() && !shuttingDown) {
         // If the vision client is running
         if (vision_client) {
+            // Receive current version packets.
+            while (vision_client->receive(vision_packet)) {
 
-    //        if (use_legacy_packets) {
-    //
-    //            // Receive legacy packets.
-    //            while (vision_client->receive(vision_packet_legacy)) {
-    //
-    //                // Detection frame.
-    //                if (vision_packet_legacy.has_detection()) {
-    //                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, normalize_field);
-    //                }
-    //
-    //                if (vision_packet_legacy.has_geometry()) {
-    //                    // Convert the geometry frame.
-    //                    roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
-    //
-    //                    field_size.x = data.field.field_length;
-    //                    field_size.y = data.field.field_width;
-    //
-    //                    if (transform_field) {
-    //                        rtt::scaleGeometryData(data, transform_scale);
-    //                    }
-    //
-    //                    // Not sure if this is needed - Bob
-    //                    // if (normalize_field) {
-    //                        // data = rtt::normalizeGeometryData(data);
-    //                    // }
-    //
-    //                    // Publish the data.
-    //                    geometry_pub.publish(data);
-    //                }
-    //            }
-    //
-    //        } else {
-
-                // Receive current version packets.
-                while (vision_client->receive(vision_packet)) {
-
-                    // Detection frame.
-                    if (vision_packet.has_detection()) {
-                        send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
-                        vision_packets_received++;
-                    }
-
-                    if (vision_packet.has_geometry()) {
-                        // Convert the geometry frame.
-                        roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
-
-                        field_size.x = data.field.field_length;
-                        field_size.y = data.field.field_width;
-
-                        if (transform_field) {
-                            rtt::scaleGeometryData(data, transform_scale);
-                        }
-
-                        // Publish the data.
-                        geometry_pub.publish(data);
-                    }
+                // Detection frame.
+                if (vision_packet.has_detection()) {
+                    send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
+                    vision_packets_received++;
                 }
-    //        }
+
+                if (vision_packet.has_geometry()) {
+                    // Convert the geometry frame.
+                    roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
+
+                    field_size.x = data.field.field_length;
+                    field_size.y = data.field.field_width;
+
+                    if (transform_field) {
+                        rtt::scaleGeometryData(data, transform_scale);
+                    }
+
+                    // Publish the data.
+                    geometry_pub.publish(data);
+                }
+            }
         } else {
             ROS_ERROR("roboteam_vision: Vision disconnected!");
             if (latestFrame) {
@@ -391,8 +357,9 @@ int main(int argc, char **argv) {
                 // Convert the referee data.
                 roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
-                if(data.gameEvent.event != 0){
-                    ROS_INFO_STREAM("Game event occured! event=" << data.gameEvent.event << ", message='" << data.gameEvent.message << "', team:bot=" << data.gameEvent.originator.team << ":" << data.gameEvent.originator.botId);
+                if(data.gameEvent.event != 0 && data.gameEvent.event != last_received_gameEvent){
+                    last_received_gameEvent = data.gameEvent.event;
+                    ROS_INFO_STREAM("Game event occured! event=" << gameEventToString(last_received_gameEvent).c_str() << ", message='" << data.gameEvent.message << "', team:bot=" << data.gameEvent.originator.team << ":" << data.gameEvent.originator.botId);
                 }
 
                 // === Check if our color has changed === //
@@ -448,7 +415,7 @@ int main(int argc, char **argv) {
 
         // Every second...
         int timeDifference = std::chrono::duration_cast<std::chrono::milliseconds>(time_diff).count();
-        if (timeDifference > 1000) {
+        if (timeDifference > 10000) {
             last_parameter_update_time = time_now;
 
             update_parameters_from_ros();
