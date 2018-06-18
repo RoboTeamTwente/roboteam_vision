@@ -28,11 +28,10 @@ constexpr int DEFAULT_REFEREE_PORT = 10003;
 const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
 const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
 
-//const std::string VISION_SOURCE_IP = "127.0.0.1";
-//const std::string REFEREE_SOURCE_IP = "127.0.0.1";
-
-const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
-const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
+const std::string VISION_SOURCE_IP = "127.0.0.1";
+const std::string REFEREE_SOURCE_IP = "127.0.0.1";
+// const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
+// const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
 
 // Keeps track of which team is us.
 // True is yellow, false is blue.
@@ -286,103 +285,110 @@ int main(int argc, char **argv) {
     // using namespace std::chrono;
     // auto lastStatistics = std::chrono::high_resolution_clock::now();
 
+    int vision_packets_received = 0;
+    int referee_packets_received = 0;
+    int last_received_gameEvent = 0;
+
     while (ros::ok() && !shuttingDown) {
-	if (vision_client) {
-        if (use_legacy_packets) {
+    	if (vision_client) {
+            if (use_legacy_packets) {
 
-            // Receive legacy packets.
-            while (vision_client->receive(vision_packet_legacy)) {
+                // Receive legacy packets.
+                while (vision_client->receive(vision_packet_legacy)) {
 
-                // Detection frame.
-                if (vision_packet_legacy.has_detection()) {
-                    send_detection_frame(vision_packet_legacy.detection(), detection_pub, normalize_field);
-                }
-
-                if (vision_packet_legacy.has_geometry()) {
-                    // Convert the geometry frame.
-                    roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
-
-                    field_size.x = data.field.field_length;
-                    field_size.y = data.field.field_width;
-
-                    if (transform_field) {
-                        rtt::scaleGeometryData(data, transform_scale);
+                    // Detection frame.
+                    if (vision_packet_legacy.has_detection()) {
+                        send_detection_frame(vision_packet_legacy.detection(), detection_pub, normalize_field);
+                        vision_packets_received++;
                     }
 
-                    // Not sure if this is needed - Bob
-                    // if (normalize_field) {
-                        // data = rtt::normalizeGeometryData(data);
-                    // }
+                    if (vision_packet_legacy.has_geometry()) {
+                        // Convert the geometry frame.
+                        roboteam_msgs::GeometryData data = rtt::legacy::convert_geometry_data(vision_packet_legacy.geometry());
 
-                    // Publish the data.
-                    geometry_pub.publish(data);
-                }
-            }
+                        field_size.x = data.field.field_length;
+                        field_size.y = data.field.field_width;
 
-        } else {
+                        if (transform_field) {
+                            rtt::scaleGeometryData(data, transform_scale);
+                        }
 
-            // Receive current version packets.
-            while (vision_client->receive(vision_packet)) {
+                        // Not sure if this is needed - Bob
+                        // if (normalize_field) {
+                            // data = rtt::normalizeGeometryData(data);
+                        // }
 
-                // Detection frame.
-                if (vision_packet.has_detection()) {
-                    send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
-                }
-
-                if (vision_packet.has_geometry()) {
-                    // Convert the geometry frame.
-                    roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
-
-                    field_size.x = data.field.field_length;
-                    field_size.y = data.field.field_width;
-                    
-                    if (transform_field) {
-                        rtt::scaleGeometryData(data, transform_scale);
+                        // Publish the data.
+                        geometry_pub.publish(data);
                     }
-                    // std::cout << field_size.x << std::endl;
+                }
 
-                    // Not sure if this is needed either - Bob
-                    // if (normalize_field) {
-                        // data = rtt::normalizeGeometryData(data);
-                    // }
+            } else {
 
-                    // Publish the data.
-                    geometry_pub.publish(data);
+                // Receive current version packets.
+                while (vision_client->receive(vision_packet)) {
+
+                    // Detection frame.
+                    if (vision_packet.has_detection()) {
+                        send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
+                        vision_packets_received++;
+                    }
+
+                    if (vision_packet.has_geometry()) {
+                        // Convert the geometry frame.
+                        roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
+
+                        field_size.x = data.field.field_length;
+                        field_size.y = data.field.field_width;
+                        
+                        if (transform_field) {
+                            rtt::scaleGeometryData(data, transform_scale);
+                        }
+                        // std::cout << field_size.x << std::endl;
+
+                        // Not sure if this is needed either - Bob
+                        // if (normalize_field) {
+                            // data = rtt::normalizeGeometryData(data);
+                        // }
+
+                        // Publish the data.
+                        geometry_pub.publish(data);
+                    }
                 }
             }
-        }
-	} else {
-	    ROS_ERROR("roboteam_vision: Vision disconnected!");
-	    if (latestFrame) {
-                detection_pub.publish(*latestFrame);
-            }
-            if (latestGeom) {
-                geometry_pub.publish(*latestGeom);
-            }
-	}
+    	} else {
+    	    ROS_ERROR("roboteam_vision: Vision disconnected!");
+    	    if (latestFrame) {
+                    detection_pub.publish(*latestFrame);
+                }
+                if (latestGeom) {
+                    geometry_pub.publish(*latestGeom);
+                }
+    	}
 
-	if (refbox_client) {
-        while (refbox_client->receive(refbox_packet)) {
-            // Convert the referee data.
-            roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
+    	if (refbox_client) {
+            while (refbox_client->receive(refbox_packet)) {
+                // Convert the referee data.
+                roboteam_msgs::RefereeData data = rtt::convert_referee_data(refbox_packet, us_is_yellow);
 
-            if (transform_field) {
-                rtt::transformRefereeData(data, transform_move, transform_rotate_right_angle);
-            }
+                if (transform_field) {
+                    rtt::transformRefereeData(data, transform_move, transform_rotate_right_angle);
+                }
 
-            if (normalize_field && !our_side_is_left) {
-                data = rtt::normalizeRefereeData(data);
-            }
+                if (normalize_field && !our_side_is_left) {
+                    data = rtt::normalizeRefereeData(data);
+                }
 
-            // Publish the data.
-            refbox_pub.publish(data);
-        }
-	} else {
-	    ROS_WARN("roboteam_vision: Referee Disconnected!");
-	    if (latestReferee) {
-		refbox_pub.publish(*latestReferee);
+                // Publish the data
+                refbox_pub.publish(data);
+                referee_packets_received++;
             }
-	}
+    	} else {
+    	    ROS_WARN("roboteam_vision: Referee Disconnected!");
+    	    if (latestReferee) {
+    		  refbox_pub.publish(*latestReferee);
+            }
+    	}
 
         // ---- Param updates ----
 
@@ -390,10 +396,16 @@ int main(int argc, char **argv) {
         auto time_diff = time_now - last_parameter_update_time;
 
         // Every second...
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(time_diff).count() > 1000) {
+        int timeDifference = std::chrono::duration_cast<std::chrono::milliseconds>(time_diff).count();
+        if (timeDifference > 1000) {
             last_parameter_update_time = time_now;
 
             update_parameters_from_ros();
+
+            ROS_INFO("Vision  packets Hz : %.2f", vision_packets_received  * (1000.0 / timeDifference));
+            ROS_INFO("Referee packets Hz : %.2f", referee_packets_received * (1000.0 / timeDifference));
+            vision_packets_received = 0;
+            referee_packets_received = 0;
         }
 
         // ---- /Param updates ----
@@ -421,4 +433,34 @@ int main(int argc, char **argv) {
     ros::shutdown();
 
     return 0;
+}
+
+std::string gameEventToString(int gameEvent){
+
+    switch(gameEvent){
+        case SSL_Referee_Game_Event_GameEventType_UNKNOWN : return "UNKNOWN";
+        case SSL_Referee_Game_Event_GameEventType_CUSTOM : return "CUSTOM";
+        case SSL_Referee_Game_Event_GameEventType_NUMBER_OF_PLAYERS : return "NUMBER_OF_PLAYERS";
+        case SSL_Referee_Game_Event_GameEventType_BALL_LEFT_FIELD : return "BALL_LEFT_FIELD";
+        case SSL_Referee_Game_Event_GameEventType_GOAL : return "GOAL";
+        case SSL_Referee_Game_Event_GameEventType_KICK_TIMEOUT : return "KICK_TIMEOUT";
+        case SSL_Referee_Game_Event_GameEventType_NO_PROGRESS_IN_GAME : return "NO_PROGRESS_IN_GAME";
+        case SSL_Referee_Game_Event_GameEventType_BOT_COLLISION : return "BOT_COLLISION";
+        case SSL_Referee_Game_Event_GameEventType_MULTIPLE_DEFENDER : return "MULTIPLE_DEFENDER";
+        case SSL_Referee_Game_Event_GameEventType_MULTIPLE_DEFENDER_PARTIALLY : return "MULTIPLE_DEFENDER_PARTIALLY";
+        case SSL_Referee_Game_Event_GameEventType_ATTACKER_IN_DEFENSE_AREA : return "ATTACKER_IN_DEFENSE_AREA";
+        case SSL_Referee_Game_Event_GameEventType_ICING : return "ICING";
+        case SSL_Referee_Game_Event_GameEventType_BALL_SPEED : return "BALL_SPEED";
+        case SSL_Referee_Game_Event_GameEventType_ROBOT_STOP_SPEED : return "ROBOT_STOP_SPEED";
+        case SSL_Referee_Game_Event_GameEventType_BALL_DRIBBLING : return "BALL_DRIBBLING";
+        case SSL_Referee_Game_Event_GameEventType_ATTACKER_TOUCH_KEEPER : return "ATTACKER_TOUCH_KEEPER";
+        case SSL_Referee_Game_Event_GameEventType_DOUBLE_TOUCH : return "DOUBLE_TOUCH";
+        case SSL_Referee_Game_Event_GameEventType_ATTACKER_TO_DEFENCE_AREA : return "ATTACKER_TO_DEFENCE_AREA";
+        case SSL_Referee_Game_Event_GameEventType_DEFENDER_TO_KICK_POINT_DISTANCE : return "DEFENDER_TO_KICK_POINT_DISTANCE";
+        case SSL_Referee_Game_Event_GameEventType_BALL_HOLDING : return "BALL_HOLDING";
+        case SSL_Referee_Game_Event_GameEventType_INDIRECT_GOAL : return "INDIRECT_GOAL";
+        case SSL_Referee_Game_Event_GameEventType_BALL_PLACEMENT_FAILED : return "BALL_PLACEMENT_FAILED";
+        case SSL_Referee_Game_Event_GameEventType_CHIP_ON_GOAL : return "CHIP_ON_GOAL";
+        default : return "Unknown gameEvent!";
+    }
 }
