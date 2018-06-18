@@ -3,7 +3,7 @@
 #include "roboteam_utils/messages_robocup_ssl_referee.pb.h"
 
 #include "roboteam_msgs/RefereeData.h"
-
+#include "roboteam_msgs/GameEvent.h"
 
 namespace rtt {
     /**
@@ -25,4 +25,9 @@ namespace rtt {
      * Converts protoBuf TeamInfo to the ROS version.
      */
     roboteam_msgs::RefereeTeamInfo convert_referee_team_info(SSL_Referee_TeamInfo protoInfo);
+
+    /**
+     * Converts protoBuf GameEvent to the ROS version.
+     */
+    roboteam_msgs::GameEvent convert_game_event(SSL_Referee_Game_Event protoGameEvent);
 }
