@@ -400,7 +400,7 @@ int main(int argc, char **argv) {
 
                 // === Check if our side has changed === //
                 // blueTeamOnPositiveHalf=true means "the blue team will have it's goal on the positive x-axis of the ssl-vision coordinate system" : https://github.com/RoboCup-SSL/ssl-refbox/blob/master/referee.proto
-                if(our_side_is_left != (us_is_yellow ^ data.blueTeamOnPositiveHalf)){
+                if(our_side_is_left == (us_is_yellow ^ data.blueTeamOnPositiveHalf)){
                     ROS_WARN("We are playing on the wrong side! Switching sides..");
                     // If we are left, switch to right. If we are right, switch to left
                     rtt::set_PARAM_OUR_SIDE(our_side_is_left ? "right" : "left");
