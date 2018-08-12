@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
     std::vector<std::string> args(argv, argv + argc);
 
     // Init ros
-    ros::init(argc, argv, "roboteam_msgs", ros::init_options::NoSigintHandler); // NoSigintHandler gives the ability to override ROS sigint handler
+    ros::init(argc, argv, "vision", ros::init_options::NoSigintHandler); // NoSigintHandler gives the ability to override ROS sigint handler
     // Flower power!
     signal(SIGINT, sigIntHandler);
     ros::NodeHandle n;
