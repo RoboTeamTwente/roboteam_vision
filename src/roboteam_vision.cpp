@@ -30,13 +30,14 @@ constexpr int DEFAULT_REFEREE_PORT = 10003;
 const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
 const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
 
-const std::string LOCAL_SOURCE_IP = "127.0.0.1";
+const std::string LOCAL_SOURCE_IP = "224.0.0.1";
+//const std::string LOCAL_SOURCE_IP = "224.5.23.2";
 
-std::string VISION_SOURCE_IP  = LOCAL_SOURCE_IP;
-std::string REFEREE_SOURCE_IP = LOCAL_SOURCE_IP;
+//std::string VISION_SOURCE_IP  = LOCAL_SOURCE_IP;
+//std::string REFEREE_SOURCE_IP = LOCAL_SOURCE_IP;
 
-// const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
-// const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
+std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
+std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
 
 // Our name as specified by ssl-refbox : https://github.com/RoboCup-SSL/ssl-refbox/blob/master/referee.conf
 const std::string ROBOTEAM_TWENTE = "RoboTeam Twente";
