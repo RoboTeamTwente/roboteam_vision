@@ -27,8 +27,11 @@
 constexpr int DEFAULT_VISION_PORT = 10006;
 constexpr int DEFAULT_REFEREE_PORT = 10003;
 
-const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
-const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
+//const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
+//const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
+
+const std::string SSL_VISION_SOURCE_IP = "224.0.0.1";
+const std::string SSL_REFEREE_SOURCE_IP= "224.0.0.1";
 
 const std::string LOCAL_SOURCE_IP = "224.0.0.1";
 //const std::string LOCAL_SOURCE_IP = "224.5.23.2";
