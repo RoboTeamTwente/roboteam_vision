@@ -224,16 +224,17 @@ void send_detection_frame(SSL_DetectionFrame detectionFrame, ros::Publisher publ
 
     // Convert the detection frame.
     roboteam_msgs::DetectionFrame frame = rtt::convert_detection_frame(detectionFrame, us_is_yellow);
-
-    if (transform_field) {
-        rtt::dropObjectsOutsideTransform(
+    rtt::Vector2 fieldSize(12,9);
+    double topMargin=0, rightMargin=0,bottomMargin=0,leftMargin=0;
+    rtt::dropObjectsOutsideTransform(
             frame,
-            field_size,
-            transform_top,
-            transform_right,
-            transform_bottom,
-            transform_left
-        );
+            fieldSize,
+            topMargin,
+            rightMargin,
+            bottomMargin,
+            leftMargin
+    );
+    if (transform_field) {
 
         rtt::transformDetectionFrame(frame, transform_move, transform_rotate_right_angle);
     }
