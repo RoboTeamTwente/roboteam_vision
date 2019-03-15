@@ -61,7 +61,7 @@ namespace rtt {
         roboteam_msgs::DetectionBall rosBall;
 
         rosBall.confidence = protoBall.confidence();
-        rosBall.area = protoBall.area();
+        rosBall.existence = protoBall.area();
         rosBall.pos.x = mm_to_m(protoBall.x());
         rosBall.pos.y = mm_to_m(protoBall.y());
         rosBall.z = mm_to_m(protoBall.z());
