@@ -25,7 +25,7 @@
 #include "roboteam_vision/transform.h"
 
 constexpr int DEFAULT_VISION_PORT = 10006;
-constexpr int DEFAULT_REFEREE_PORT = 10003;
+constexpr int DEFAULT_REFEREE_PORT = 11113; // 10003
 
 const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
 const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
@@ -33,7 +33,7 @@ const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
 const std::string LOCAL_SOURCE_IP = "127.0.0.1";
 
 std::string VISION_SOURCE_IP  = LOCAL_SOURCE_IP;
-std::string REFEREE_SOURCE_IP = LOCAL_SOURCE_IP;
+std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
 
 // const std::string VISION_SOURCE_IP = SSL_VISION_SOURCE_IP;
 // const std::string REFEREE_SOURCE_IP = SSL_REFEREE_SOURCE_IP;
@@ -265,8 +265,8 @@ int main(int argc, char **argv) {
     // The `true` means that the messages will be latched.
     // When a new node subscribes, it will automatically get the latest message of the topic,
     // even if that was published a minute ago.
-    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000, true);
-    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
+//    ros::Publisher detection_pub = n.advertise<roboteam_msgs::DetectionFrame>("vision_detection", 1000, true);
+//    ros::Publisher geometry_pub = n.advertise<roboteam_msgs::GeometryData>("vision_geometry", 1000, true);
     ros::Publisher refbox_pub = n.advertise<roboteam_msgs::RefereeData>("vision_refbox", 1000, true);
 
     ROS_INFO("Publishing to 'vision_detection', 'vision_geometry', 'vision_refbox'");
@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
         ROS_WARN_STREAM("Watch out! Current REFEREE_SOURCE_IP will not work for the competition! Remember to set it to " << SSL_REFEREE_SOURCE_IP);
 
     // Open the clients, blocking = false.
-    vision_client->open(false);
+//    vision_client->open(false);
     refbox_client->open(false);
 
     std::chrono::high_resolution_clock::time_point last_parameter_update_time = std::chrono::high_resolution_clock::now();
@@ -331,45 +331,45 @@ int main(int argc, char **argv) {
     // using namespace std::chrono;
     // auto lastStatistics = std::chrono::high_resolution_clock::now();
 
-    int vision_packets_received = 0;
+//    int vision_packets_received = 0;
     int referee_packets_received = 0;
     int last_received_gameEvent = 0;
 
     while (ros::ok() && !shuttingDown) {
         // If the vision client is running
         if (vision_client) {
-            // Receive current version packets.
-            while (vision_client->receive(vision_packet)) {
-
-                // Detection frame.
-                if (vision_packet.has_detection()) {
-                    send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
-                    vision_packets_received++;
-                }
-
-                if (vision_packet.has_geometry()) {
-                    // Convert the geometry frame.
-                    roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
-
-                    field_size.x = data.field.field_length;
-                    field_size.y = data.field.field_width;
-
-                    if (transform_field) {
-                        rtt::scaleGeometryData(data, transform_scale);
-                    }
-
-                    // Publish the data.
-                    geometry_pub.publish(data);
-                }
-            }
+//            // Receive current version packets.
+//            while (vision_client->receive(vision_packet)) {
+//
+//                // Detection frame.
+//                if (vision_packet.has_detection()) {
+//                    send_detection_frame(vision_packet.detection(), detection_pub, normalize_field);
+//                    vision_packets_received++;
+//                }
+//
+//                if (vision_packet.has_geometry()) {
+//                    // Convert the geometry frame.
+//                    roboteam_msgs::GeometryData data = rtt::convert_geometry_data(vision_packet.geometry());
+//
+//                    field_size.x = data.field.field_length;
+//                    field_size.y = data.field.field_width;
+//
+//                    if (transform_field) {
+//                        rtt::scaleGeometryData(data, transform_scale);
+//                    }
+//
+//                    // Publish the data.
+//                    geometry_pub.publish(data);
+//                }
+//            }
         } else {
             ROS_ERROR("roboteam_vision: Vision disconnected!");
-            if (latestFrame) {
-                    detection_pub.publish(*latestFrame);
-                }
-                if (latestGeom) {
-                    geometry_pub.publish(*latestGeom);
-                }
+//            if (latestFrame) {
+//                    detection_pub.publish(*latestFrame);
+//                }
+//                if (latestGeom) {
+//                    geometry_pub.publish(*latestGeom);
+//                }
         }
 
         // If the referee client is running
@@ -443,9 +443,9 @@ int main(int argc, char **argv) {
 
             update_parameters_from_ros();
 
-            ROS_INFO("Vision  packets Hz : %.2f", vision_packets_received  * (1000.0 / timeDifference));
+//            ROS_INFO("Vision  packets Hz : %.2f", vision_packets_received  * (1000.0 / timeDifference));
             ROS_INFO("Referee packets Hz : %.2f", referee_packets_received * (1000.0 / timeDifference));
-            vision_packets_received = 0;
+//            vision_packets_received = 0;
             referee_packets_received = 0;
         }
 
@@ -457,7 +457,7 @@ int main(int argc, char **argv) {
 
     ROS_INFO("Shutting down vision..");
     // Destructors do not call close properly. Just to be sure we do.
-    vision_client->close();
+//    vision_client->close();
     refbox_client->close();
 
     // This is needed because we use our own SIGINT handler!
