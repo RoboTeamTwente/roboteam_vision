@@ -25,7 +25,7 @@
 #include "roboteam_vision/transform.h"
 
 constexpr int DEFAULT_VISION_PORT = 10006;
-constexpr int DEFAULT_REFEREE_PORT = 11113; // 10003
+constexpr int DEFAULT_REFEREE_PORT =  10003;
 
 const std::string SSL_VISION_SOURCE_IP = "224.5.23.2";
 const std::string SSL_REFEREE_SOURCE_IP= "224.5.23.1";
