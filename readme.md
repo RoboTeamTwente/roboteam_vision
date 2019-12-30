@@ -1,3 +1,6 @@
+> :warning: **This repository is deprecated**: This repository is no longer necessary and it's functionality has been merged into roboteam_world and roboteam_utils
+
+
 ### roboteam_vision
 
 This program receives the messages from the SSL vision program and converts them into ROS messages.
